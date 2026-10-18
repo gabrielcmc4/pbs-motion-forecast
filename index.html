@@ -304,7 +304,7 @@ const PBS = (function () {
     disconnected: { label: 'Workover — assembly disconnected (18 Oct 2026)', disp_t: 86419.3, T: 10.803, GM: 5.799, kxx: 16.1, kyy: 58.2 },
   };
   const SHIP = { L: 219.4, B: 42.0, Awp: 8195 };
-  // calibrated parameters (Sep 8 – Oct 17 2026, 207 forecast/MRU pairs)
+  // calibrated parameters (1 Sep – 17 Oct 2026, 411 forecast/MRU pairs, 174 MRU windows) — v1.3
   const CAL = {
     ca_heave: 0.8, s_swell: 2, s_windsea: 2, x_mru: 30, zeta_roll: 0.22, ca_roll_factor: 1.1, slope_exp: 0.5,
     x_rt: 7.0,
@@ -315,7 +315,7 @@ const PBS = (function () {
       aircraft: {
         AW139: { label: 'AW139 (Cat. B)', day: { pitch: 3.0, roll: 3.0, incl: 3.5, heaveRate: 1.0, heave: 3.0 }, night: { pitch: 1.5, roll: 1.5, incl: 2.0, heaveRate: 0.5, heave: 1.5 } },
         S92:   { label: 'S-92 (Cat. A)',  day: { pitch: 2.0, roll: 2.0, incl: 2.5, heaveRate: 1.0, heave: 3.0 }, night: { pitch: 1.0, roll: 1.0, incl: 1.5, heaveRate: 0.5, heave: 1.5 } } } },
-    heave: { floor: 0.067, scale: 0.92 }, pitch: { floor: 0.083, scale: 1.08 }, roll: { floor: 0.107, scale: 0.90 },
+    heave: { floor: 0.065, scale: 0.99 }, pitch: { floor: 0.075, scale: 1.19 }, roll: { floor: 0.112, scale: 0.88 },
   };
   const NW = 200, OMEGA = Array.from({ length: NW }, (_, i) => 0.15 + (2.0 - 0.15) * i / (NW - 1));
   const DIRS = Array.from({ length: 37 }, (_, i) => -90 + 5 * i);
@@ -528,7 +528,7 @@ const PBS = (function () {
   const I18N={
   en:{
     subtitle:'Petrobras 10000 · heave, pitch, roll and helideck status from the DTN Marine Daily Planner',
-    valLink:'Curious if this forecast is accurate? Gabriel also was, but watch this ↗', heroSub:'Campos Basin · 22.59 S 40.23 W · dynamic positioning', heroTag:'Motion & helideck forecast', version:'Workover configuration · model v1.2 (18 Oct 2026)',
+    valLink:'Curious if this forecast is accurate? Gabriel also was, but watch this ↗', heroSub:'Campos Basin · 22.59 S 40.23 W · dynamic positioning', heroTag:'Motion & helideck forecast', version:'Workover configuration · model v1.3 (18 Oct 2026)',
     s1:'1 · Forecast input', upload:'Upload the DTN forecast (PDF or the .eml e-mail)',
     fileHint:'Or paste the Daily Planner text. A sample forecast (17 Oct 2026, 12:00) is loaded so you can see how it works.',
     cond:'Rig condition', condA:'Workover · TRT connected', condB:'Workover · assembly disconnected',
@@ -572,10 +572,10 @@ const PBS = (function () {
     heliMethodTitle:'Helideck probability (coming soon)',
     heliMethod:'For each 6-hour step the most probable 20-minute maxima of pitch, roll (plus the static heel of 0.6° and the slow-heel baseline) and the NORMAM-27 heave rate VArf (largest vertical oscillation of the helideck centre divided by half its period) are computed from the response spectra. The probability that each stays within its limit follows the Rayleigh distribution of maxima, P = exp(−N·exp(−L²/2σ²)), integrated over the model\'s own uncertainty (log-normal, from the MRU validation). "Green" is the joint probability for pitch, roll, inclination and heave rate, for the day or night limits that apply at that hour.',
     valTitle:'Validation against the rig MRU',
-    valText:'207 forecast steps (8 Sep – 17 Oct 2026, same location 22.59 S 40.23 W) were compared with the MRU heave, pitch and roll sampled every 5.6 min, using the measured heading. The MRU statistic is the standard deviation in a ±3 h window; the model adds a measured baseline (sensor/slow-heel floor) in quadrature.',
+    valText:'411 forecast steps from 71 DTN issues (1 Sep – 17 Oct 2026, same location 22.59 S 40.23 W; 174 distinct MRU windows) were compared with the MRU heave, pitch and roll sampled every 5.6 min, using the measured heading. The MRU statistic is the standard deviation in a ±3 h window; the model adds a measured baseline (sensor/slow-heel floor) in quadrature.',
     valHead:['Motion','Correlation','Within ±30 %','Within ±50 %','Bias, top 25 % events','Baseline'],
-    valRows:[['Heave (σ, MRU)','0.85','73 %','88 %','−5 %','0.07 m'],['Pitch (σ)','0.81','81 %','94 %','0 %','0.08°'],['Roll (σ)','0.56','53 %','73 %','−12 %','0.11°']],
-    valCaveat:'<b>Read the table with these caveats.</b> The statistics are in-sample (the 207 steps cover 108 distinct MRU windows). Scale factors were set so that the largest 25 % of events are matched; over all cases the model therefore runs about 10 % high on heave and pitch and 20 % high on roll in calm weather, and 8–9 % low in the top 10 % of events (roll 25 % low). Hold-out check (calibrated on September, tested on the calmer October): heave correlation 0.79 but only 43 % within ±30 % (over-prediction in calm seas), pitch 0.77 and 89 % within ±30 %, <b>roll 0.15, i.e. no out-of-sample skill</b>. Treat roll as indicative only. Validated envelope: Hs 1.1–2.9 m, heave up to 1.6 m peak-to-peak, rig heading mostly 0–45° with the dominant swell from astern or the quarter; head-seas results rely on the model\'s symmetry and are not yet checked against data. Forecast wind vs rig anemometer: correlation 0.83, ratio 1.09, which supports the forecast as input.',
+    valRows:[['Heave (σ, MRU)','0.87','73 %','88 %','0 %','0.07 m'],['Pitch (σ)','0.83','70 %','87 %','0 %','0.08°'],['Roll (σ)','0.46','43 %','61 %','0 %','0.11°']],
+    valCaveat:'<b>Read the table with these caveats.</b> The statistics are in-sample. Scale factors (0.99 heave, 1.19 pitch, 0.88 roll) were set so that the largest 25 % of events are matched; over all cases the model therefore runs about 14 % high on heave and pitch and 37 % high on roll in calm weather, and within 3 % in the top 10 % of events (roll 18 % low). Hold-out checks: calibrated on September and tested on the calmer October, heave correlation 0.79 (57 % within ±30 %, over-prediction in calm seas), pitch 0.77 (89 %); calibrated on October and tested on September, heave 0.85 (79 %), pitch 0.82 (59 %); <b>roll 0.16 and 0.49, i.e. little out-of-sample skill</b>. Treat roll as indicative only. Validated envelope: Hs 1.1–2.9 m, heave up to 1.6 m peak-to-peak, rig heading mostly 0–45° with the dominant swell from astern or the quarter; head-seas results rely on the model\'s symmetry and are not yet checked against data. Forecast wind vs rig anemometer: correlation 0.85, ratio 1.06, which supports the forecast as input.',
     valLinkLong:'Curious if this forecast is accurate? Gabriel also was, but watch this ↗',
     madeBy:'Made by Toolpusher Gabriel Cunha', footNote:'Inputs are processed in your browser; nothing is uploaded. For questions or new rig conditions contact the author.',
     stSample:'Sample forecast (17 Oct 2026 12:00) reloaded.', stReading:n=>`Reading ${n} …`, stRead:(k,n)=>`Read ${k} forecast steps from ${n}.`, stNoTable:'File read, but no forecast table recognised.',
@@ -586,7 +586,7 @@ const PBS = (function () {
   },
   pt:{
     subtitle:'Petrobras 10000 · heave, pitch, roll e status do heliponto a partir do DTN Marine Daily Planner',
-    valLink:'Curioso se essa previsão é precisa? O Gabriel também era, mas veja isto ↗', heroSub:'Bacia de Campos · 22,59 S 40,23 W · posicionamento dinâmico', heroTag:'Previsão de movimentos e heliponto', version:'Configuração de workover · modelo v1.2 (18 out 2026)',
+    valLink:'Curioso se essa previsão é precisa? O Gabriel também era, mas veja isto ↗', heroSub:'Bacia de Campos · 22,59 S 40,23 W · posicionamento dinâmico', heroTag:'Previsão de movimentos e heliponto', version:'Configuração de workover · modelo v1.3 (18 out 2026)',
     s1:'1 · Entrada da previsão', upload:'Carregue a previsão DTN (PDF ou o e-mail .eml)',
     fileHint:'Ou cole o texto do Daily Planner. Uma previsão de exemplo (17 out 2026, 12:00) já está carregada para mostrar como funciona.',
     cond:'Condição da sonda', condA:'Workover · TRT conectada', condB:'Workover · conjunto desconectado',
@@ -630,10 +630,10 @@ const PBS = (function () {
     heliMethodTitle:'Probabilidade do heliponto (em breve)',
     heliMethod:'Para cada passo de 6 h calculam-se, a partir dos espectros de resposta, os máximos mais prováveis em 20 min de caturro, balanço (mais a banda estática de 0,6° e o patamar de banda lenta) e a velocidade de arfagem VArf da NORMAM-27 (maior oscilação vertical do centro do helideque dividida por meio período). A probabilidade de cada um ficar dentro do limite segue a distribuição de Rayleigh dos máximos, P = exp(−N·exp(−L²/2σ²)), integrada sobre a incerteza do próprio modelo (log-normal, da validação com o MRU). "Verde" é a probabilidade conjunta para caturro, balanço, inclinação e VArf, com os limites de dia ou de noite que valem naquela hora.',
     valTitle:'Validação contra o MRU da sonda',
-    valText:'207 passos de previsão (8 set – 17 out 2026, mesma posição 22,59 S 40,23 W) foram comparados com heave, pitch e roll do MRU amostrados a cada 5,6 min, usando o aproamento medido. A estatística do MRU é o desvio padrão numa janela de ±3 h; o modelo soma em quadratura um patamar medido (ruído do sensor / banda lenta).',
+    valText:'411 passos de previsão de 71 emissões da DTN (1 set – 17 out 2026, mesma posição 22,59 S 40,23 W; 174 janelas distintas do MRU) foram comparados com heave, pitch e roll do MRU amostrados a cada 5,6 min, usando o aproamento medido. A estatística do MRU é o desvio padrão numa janela de ±3 h; o modelo soma em quadratura um patamar medido (ruído do sensor / banda lenta).',
     valHead:['Movimento','Correlação','Dentro de ±30 %','Dentro de ±50 %','Viés, 25 % maiores eventos','Patamar'],
-    valRows:[['Heave (σ, MRU)','0,85','73 %','88 %','−5 %','0,07 m'],['Pitch (σ)','0,81','81 %','94 %','0 %','0,08°'],['Roll (σ)','0,56','53 %','73 %','−12 %','0,11°']],
-    valCaveat:'<b>Leia a tabela com estas ressalvas.</b> As estatísticas são in-sample (os 207 passos cobrem 108 janelas distintas do MRU). Os fatores de escala foram fixados para acertar os 25 % maiores eventos; no conjunto o modelo fica cerca de 10 % acima em heave e pitch e 20 % acima em roll com mar calmo, e 8–9 % abaixo nos 10 % maiores eventos (roll 25 % abaixo). Teste de hold-out (calibrado em setembro, testado no outubro mais calmo): correlação de heave 0,79 mas só 43 % dentro de ±30 % (superestimativa em mar calmo), pitch 0,77 e 89 % dentro de ±30 %, <b>roll 0,15, ou seja, sem habilidade fora da amostra</b>. Trate o roll como indicativo. Envelope validado: Hs 1,1–2,9 m, heave até 1,6 m pico a pico, aproamento da sonda quase sempre 0–45° com o swell dominante pela popa ou pela alheta; resultados em mar de proa dependem da simetria do modelo e ainda não foram conferidos com dados. Vento previsto vs anemômetro da sonda: correlação 0,83, razão 1,09, o que sustenta a previsão como entrada.',
+    valRows:[['Heave (σ, MRU)','0,87','73 %','88 %','0 %','0,07 m'],['Pitch (σ)','0,83','70 %','87 %','0 %','0,08°'],['Roll (σ)','0,46','43 %','61 %','0 %','0,11°']],
+    valCaveat:'<b>Leia a tabela com estas ressalvas.</b> As estatísticas são in-sample. Os fatores de escala (0,99 heave, 1,19 pitch, 0,88 roll) foram fixados para acertar os 25 % maiores eventos; no conjunto o modelo fica cerca de 14 % acima em heave e pitch e 37 % acima em roll com mar calmo, e dentro de 3 % nos 10 % maiores eventos (roll 18 % abaixo). Testes de hold-out: calibrado em setembro e testado no outubro mais calmo, correlação de heave 0,79 (57 % dentro de ±30 %, superestimativa em mar calmo), pitch 0,77 (89 %); calibrado em outubro e testado em setembro, heave 0,85 (79 %), pitch 0,82 (59 %); <b>roll 0,16 e 0,49, ou seja, pouca habilidade fora da amostra</b>. Trate o roll como indicativo. Envelope validado: Hs 1,1–2,9 m, heave até 1,6 m pico a pico, aproamento da sonda quase sempre 0–45° com o swell dominante pela popa ou pela alheta; resultados em mar de proa dependem da simetria do modelo e ainda não foram conferidos com dados. Vento previsto vs anemômetro da sonda: correlação 0,85, razão 1,06, o que sustenta a previsão como entrada.',
     valLinkLong:'Curioso se essa previsão é precisa? O Gabriel também era, mas veja isto ↗',
     madeBy:'Feito por Toolpusher Gabriel Cunha', footNote:'As entradas são processadas no seu navegador; nada é enviado. Dúvidas ou novas condições da sonda: fale com o autor.',
     stSample:'Previsão de exemplo (17 out 2026 12:00) recarregada.', stReading:n=>`Lendo ${n} …`, stRead:(k,n)=>`Lidos ${k} passos de previsão de ${n}.`, stNoTable:'Arquivo lido, mas nenhuma tabela de previsão reconhecida.',
