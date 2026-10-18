@@ -317,7 +317,7 @@ const PBS = (function () {
         S92:   { label: 'S-92 (Cat. A)',  day: { pitch: 2.0, roll: 2.0, incl: 2.5, heaveRate: 1.0, heave: 3.0 }, night: { pitch: 1.0, roll: 1.0, incl: 1.5, heaveRate: 0.5, heave: 1.5 } } } },
     heave: { floor: 0.065, scale: 0.99 }, pitch: { floor: 0.075, scale: 1.19 }, roll: { floor: 0.112, scale: 0.88 },
   };
-  const NW = 200, OMEGA = Array.from({ length: NW }, (_, i) => 0.15 + (2.0 - 0.15) * i / (NW - 1));
+  const NW = 120, OMEGA = Array.from({ length: NW }, (_, i) => 0.15 + (2.0 - 0.15) * i / (NW - 1));
   const DIRS = Array.from({ length: 37 }, (_, i) => -90 + 5 * i);
 
   function makeShip(cond) {
@@ -356,6 +356,19 @@ const PBS = (function () {
     const roll = amp * slope * Math.abs(Math.sin(beta)) * (Math.sin(kl) / kl) * k;
     return [heave, pitch, roll];
   }
+  // RAO table cache: [beta 0..180 deg][omega index] -> [heave, pitch, roll]; built once per ship (36k evaluations)
+  function raoTable(s) {
+    if (s._rao) return s._rao;
+    // stores squared RAOs of the six point quantities as a flat Float64Array: index (b*NW+i)*6 + q
+    const T = new Float64Array(181 * NW * 6);
+    for (let b = 0; b <= 180; b++) for (let i = 0; i < NW; i++) {
+      const [h, pc, ro] = rao(s, OMEGA[i], b); const k = (b * NW + i) * 6;
+      T[k] = h * h; T[k + 1] = pc * pc; T[k + 2] = ro * ro;
+      T[k + 3] = h * h + (s.x_rt * pc) ** 2; T[k + 4] = h * h + (s.x_mru * pc) ** 2;
+      T[k + 5] = (s.heave.scale * h) ** 2 + (s.pitch.scale * s.x_heli * pc) ** 2;
+    }
+    s._rao = T; return T;
+  }
   function dnvGamma(Hs, Tp) {
     const x = Tp / Math.sqrt(Math.max(Hs, 0.05));
     if (x <= 3.6) return 5; if (x >= 5) return 1; return Math.exp(5.75 - 1.15 * x);
@@ -386,20 +399,18 @@ const PBS = (function () {
       const D = spreading(p.kind === 'swell' ? s.s_swell : s.s_windsea);
       const S = OMEGA.map(w => jonswap(w, p.hs, p.tp, gamma));
       // relative headings for each spread direction
-      const betas = DIRS.map(d => { let b = ((p.dirFrom + d - heading + 180) % 360 + 360) % 360 - 180; return 180 - Math.abs(b); });
-      const Sr = [[], [], [], [], [], []];
+      const betas = DIRS.map(d => { let b = ((p.dirFrom + d - heading + 180) % 360 + 360) % 360 - 180; return Math.round(180 - Math.abs(b)); });
+      const RT = raoTable(s);
+      const Sr = [new Float64Array(NW), new Float64Array(NW), new Float64Array(NW), new Float64Array(NW), new Float64Array(NW), new Float64Array(NW)];
       for (let i = 0; i < NW; i++) {
-        let acc = [0, 0, 0, 0, 0, 0];
+        let a0 = 0, a1 = 0, a2 = 0, a3 = 0, a4 = 0, a5 = 0;
         for (let j = 0; j < DIRS.length; j++) {
-          const [h, pc, ro] = rao(s, OMEGA[i], betas[j]);
-          const rt = Math.hypot(h, s.x_rt * pc), mru = Math.hypot(h, s.x_mru * pc);
-          const heli = Math.hypot(s.heave.scale * h, s.pitch.scale * s.x_heli * pc);   // calibrated components, helideck
-          const R = [h, pc, ro, rt, mru, heli];
-          for (let q = 0; q < 6; q++) acc[q] += R[q] * R[q] * D[j];
+          const k = (betas[j] * NW + i) * 6, w = D[j];
+          a0 += RT[k] * w; a1 += RT[k + 1] * w; a2 += RT[k + 2] * w; a3 += RT[k + 3] * w; a4 += RT[k + 4] * w; a5 += RT[k + 5] * w;
         }
-        for (let q = 0; q < 6; q++) Sr[q][i] = acc[q] * S[i];
+        const Si = S[i]; Sr[0][i] = a0 * Si; Sr[1][i] = a1 * Si; Sr[2][i] = a2 * Si; Sr[3][i] = a3 * Si; Sr[4][i] = a4 * Si; Sr[5][i] = a5 * Si;
       }
-      for (let q = 0; q < 6; q++) { m0[q] += trapz(Sr[q], OMEGA); m2[q] += trapz(Sr[q].map((v, i) => v * OMEGA[i] * OMEGA[i]), OMEGA); m4[q] += trapz(Sr[q].map((v, i) => v * Math.pow(OMEGA[i], 4)), OMEGA); }
+      for (let q = 0; q < 6; q++) { const y = Sr[q]; let s0 = 0, s2 = 0, s4 = 0; for (let i = 1; i < NW; i++) { const dw = OMEGA[i] - OMEGA[i - 1], w2a = OMEGA[i] * OMEGA[i], w2b = OMEGA[i - 1] * OMEGA[i - 1]; s0 += 0.5 * (y[i] + y[i - 1]) * dw; s2 += 0.5 * (y[i] * w2a + y[i - 1] * w2b) * dw; s4 += 0.5 * (y[i] * w2a * w2a + y[i - 1] * w2b * w2b) * dw; } m0[q] += s0; m2[q] += s2; m4[q] += s4; }
     }
     const out = {};
     ['heave', 'pitch', 'roll', 'rt', 'mru', 'heli'].forEach((n, q) => {
@@ -528,7 +539,7 @@ const PBS = (function () {
   const I18N={
   en:{
     subtitle:'Petrobras 10000 · heave, pitch, roll and helideck status from the DTN Marine Daily Planner',
-    valLink:'Curious if this forecast is accurate? Gabriel also was, but watch this ↗', heroSub:'Campos Basin · 22.59 S 40.23 W · dynamic positioning', heroTag:'Motion & helideck forecast', version:'Workover configuration · model v1.3 (18 Oct 2026)',
+    valLink:'Curious if this forecast is accurate? Gabriel also was, but watch this ↗', heroSub:'Campos Basin · 22.59 S 40.23 W · dynamic positioning', heroTag:'Motion & helideck forecast', version:'Workover configuration · model v1.3.1 (18 Oct 2026)',
     s1:'1 · Forecast input', upload:'Upload the DTN forecast (PDF or the .eml e-mail)',
     fileHint:'Or paste the Daily Planner text. A sample forecast (17 Oct 2026, 12:00) is loaded so you can see how it works.',
     cond:'Rig condition', condA:'Workover · TRT connected', condB:'Workover · assembly disconnected',
@@ -578,7 +589,7 @@ const PBS = (function () {
     valCaveat:'<b>Read the table with these caveats.</b> The statistics are in-sample. Scale factors (0.99 heave, 1.19 pitch, 0.88 roll) were set so that the largest 25 % of events are matched; over all cases the model therefore runs about 14 % high on heave and pitch and 37 % high on roll in calm weather, and within 3 % in the top 10 % of events (roll 18 % low). Hold-out checks: calibrated on September and tested on the calmer October, heave correlation 0.79 (57 % within ±30 %, over-prediction in calm seas), pitch 0.77 (89 %); calibrated on October and tested on September, heave 0.85 (79 %), pitch 0.82 (59 %); <b>roll 0.16 and 0.49, i.e. little out-of-sample skill</b>. Treat roll as indicative only. Validated envelope: Hs 1.1–2.9 m, heave up to 1.6 m peak-to-peak, rig heading mostly 0–45° with the dominant swell from astern or the quarter; head-seas results rely on the model\'s symmetry and are not yet checked against data. Forecast wind vs rig anemometer: correlation 0.85, ratio 1.06, which supports the forecast as input.',
     valLinkLong:'Curious if this forecast is accurate? Gabriel also was, but watch this ↗',
     madeBy:'Made by Toolpusher Gabriel Cunha', footNote:'Inputs are processed in your browser; nothing is uploaded. For questions or new rig conditions contact the author.',
-    stSample:'Sample forecast (17 Oct 2026 12:00) reloaded.', stReading:n=>`Reading ${n} …`, stRead:(k,n)=>`Read ${k} forecast steps from ${n}.`, stNoTable:'File read, but no forecast table recognised.',
+    stSample:'Sample forecast (17 Oct 2026 12:00) reloaded.', stCalc:'Calculating 72 headings × forecast steps …', stFail:'Calculation failed:', stReading:n=>`Reading ${n} …`, stRead:(k,n)=>`Read ${k} forecast steps from ${n}.`, stNoTable:'File read, but no forecast table recognised.',
     stNoPdf:'No PDF attachment found inside the e-mail.', stNoReader:'PDF reader did not load; paste the planner text instead.', stErr:m=>'Could not read the file: '+m,
     stSteps:(n,m)=>`${n} forecast steps${m>0?' ('+m+' line(s) not recognised — check the text)':''}`, stIssued:'issued',
     noRows:'No forecast rows recognised. Paste the text of the "Daily Planner" table (TIME / WIND / SWELL columns) or upload the DTN PDF / .eml.',
@@ -586,7 +597,7 @@ const PBS = (function () {
   },
   pt:{
     subtitle:'Petrobras 10000 · heave, pitch, roll e status do heliponto a partir do DTN Marine Daily Planner',
-    valLink:'Curioso se essa previsão é precisa? O Gabriel também era, mas veja isto ↗', heroSub:'Bacia de Campos · 22,59 S 40,23 W · posicionamento dinâmico', heroTag:'Previsão de movimentos e heliponto', version:'Configuração de workover · modelo v1.3 (18 out 2026)',
+    valLink:'Curioso se essa previsão é precisa? O Gabriel também era, mas veja isto ↗', heroSub:'Bacia de Campos · 22,59 S 40,23 W · posicionamento dinâmico', heroTag:'Previsão de movimentos e heliponto', version:'Configuração de workover · modelo v1.3.1 (18 out 2026)',
     s1:'1 · Entrada da previsão', upload:'Carregue a previsão DTN (PDF ou o e-mail .eml)',
     fileHint:'Ou cole o texto do Daily Planner. Uma previsão de exemplo (17 out 2026, 12:00) já está carregada para mostrar como funciona.',
     cond:'Condição da sonda', condA:'Workover · TRT conectada', condB:'Workover · conjunto desconectado',
@@ -636,7 +647,7 @@ const PBS = (function () {
     valCaveat:'<b>Leia a tabela com estas ressalvas.</b> As estatísticas são in-sample. Os fatores de escala (0,99 heave, 1,19 pitch, 0,88 roll) foram fixados para acertar os 25 % maiores eventos; no conjunto o modelo fica cerca de 14 % acima em heave e pitch e 37 % acima em roll com mar calmo, e dentro de 3 % nos 10 % maiores eventos (roll 18 % abaixo). Testes de hold-out: calibrado em setembro e testado no outubro mais calmo, correlação de heave 0,79 (57 % dentro de ±30 %, superestimativa em mar calmo), pitch 0,77 (89 %); calibrado em outubro e testado em setembro, heave 0,85 (79 %), pitch 0,82 (59 %); <b>roll 0,16 e 0,49, ou seja, pouca habilidade fora da amostra</b>. Trate o roll como indicativo. Envelope validado: Hs 1,1–2,9 m, heave até 1,6 m pico a pico, aproamento da sonda quase sempre 0–45° com o swell dominante pela popa ou pela alheta; resultados em mar de proa dependem da simetria do modelo e ainda não foram conferidos com dados. Vento previsto vs anemômetro da sonda: correlação 0,85, razão 1,06, o que sustenta a previsão como entrada.',
     valLinkLong:'Curioso se essa previsão é precisa? O Gabriel também era, mas veja isto ↗',
     madeBy:'Feito por Toolpusher Gabriel Cunha', footNote:'As entradas são processadas no seu navegador; nada é enviado. Dúvidas ou novas condições da sonda: fale com o autor.',
-    stSample:'Previsão de exemplo (17 out 2026 12:00) recarregada.', stReading:n=>`Lendo ${n} …`, stRead:(k,n)=>`Lidos ${k} passos de previsão de ${n}.`, stNoTable:'Arquivo lido, mas nenhuma tabela de previsão reconhecida.',
+    stSample:'Previsão de exemplo (17 out 2026 12:00) recarregada.', stCalc:'Calculando 72 aproamentos × passos da previsão …', stFail:'Falha no cálculo:', stReading:n=>`Lendo ${n} …`, stRead:(k,n)=>`Lidos ${k} passos de previsão de ${n}.`, stNoTable:'Arquivo lido, mas nenhuma tabela de previsão reconhecida.',
     stNoPdf:'Nenhum PDF anexo encontrado dentro do e-mail.', stNoReader:'O leitor de PDF não carregou; cole o texto do planner.', stErr:m=>'Não foi possível ler o arquivo: '+m,
     stSteps:(n,m)=>`${n} passos de previsão${m>0?' ('+m+' linha(s) não reconhecida(s) — confira o texto)':''}`, stIssued:'emitida',
     noRows:'Nenhuma linha de previsão reconhecida. Cole o texto da tabela do "Daily Planner" (colunas TIME / WIND / SWELL) ou carregue o PDF / .eml da DTN.',
@@ -714,6 +725,10 @@ const PBS = (function () {
   function dominantSwell(r){ return (r.swell2_hs>r.swell1_hs)?{d:r.swell2_dir_deg,hs:r.swell2_hs,tp:r.swell2_tp,n:r.swell2_dir}:{d:r.swell1_dir_deg,hs:r.swell1_hs,tp:r.swell1_tp,n:r.swell1_dir}; }
   function meanDir(angs,wts){ let x=0,y=0; angs.forEach((a,i)=>{ if(a==null) return; const w=wts?wts[i]:1; x+=w*Math.cos(a*Math.PI/180); y+=w*Math.sin(a*Math.PI/180); }); return deg(Math.atan2(y,x)*180/Math.PI); }
   function run(){
+    setStatus($('runStatus'),t('stCalc')); $('run').disabled=true;
+    setTimeout(()=>{ try{ runNow(); } catch(e){ setStatus($('runStatus'),t('stFail')+' '+e.message,true); } finally{ $('run').disabled=false; } },30);
+  }
+  function runNow(){
     const txt=$('txt').value; FC=PBS.parseForecast(txt);
     if(!FC.rows.length){ setStatus($('runStatus'),t('noRows'),true); $('summary').hidden=true; $('detail').hidden=true; return; }
     const ship=PBS.makeShip($('cond').value);
