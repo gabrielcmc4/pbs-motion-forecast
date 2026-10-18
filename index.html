@@ -120,7 +120,8 @@ td:first-child,th:first-child,td.l,th.l{text-align:left}
 tr.day td{background:var(--line-soft);font-weight:600;text-align:left;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
 td.v{font-weight:600}
 svg text{font-family:var(--body);fill:var(--fg)}
-.charts{display:grid;grid-template-columns:2fr 1fr;gap:18px}
+.charts{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.45fr);gap:18px 24px;align-items:start}
+.charts .ts{grid-column:1 / -1}
 @media (max-width:860px){.charts{grid-template-columns:1fr}}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
 .legend i{display:inline-block;width:14px;height:3px;vertical-align:middle;margin-right:5px}
@@ -261,9 +262,9 @@ T-storm Probability &lt; 30 % ≥ 30 % ≥ 60 %</textarea>
 <section class="panel" id="detail" hidden>
   <h2 id="detailTitle"></h2>
   <div class="charts">
-    <div><h3 data-i18n="chartTitle"></h3><div id="chartTS"></div><div class="legend" id="legendTS"></div></div>
-    <div><h3 data-i18n="polarTitle"></h3><div id="chartPolar"></div><div class="small" id="polarNote"></div>
-      <h3 style="margin-top:16px" data-i18n="animTitle"></h3>
+    <div class="ts"><h3 data-i18n="chartTitle"></h3><div id="chartTS"></div><div class="legend" id="legendTS"></div></div>
+    <div><h3 data-i18n="polarTitle"></h3><div id="chartPolar"></div><div class="small" id="polarNote"></div></div>
+    <div><h3 data-i18n="animTitle"></h3>
       <div class="animwrap"><svg id="animSvg" viewBox="0 0 560 400" width="100%" role="img" aria-label="Animated view of the Petrobras 10000 moving in heave, pitch and roll over a stylised sea">
         <defs>
           <linearGradient id="seaG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--anim-sea2)"/><stop offset="1" stop-color="var(--anim-sea)"/></linearGradient>
@@ -601,7 +602,7 @@ const PBS = (function () {
     s3:'3 ·', chartTitle:'Significant motions over the forecast', polarTitle:'Drill-floor vertical motion vs heading',
     animTitle:'Rig motion for this heading (animated)', animStepLbl:'Forecast step', animPause:'Pause', animPlayLbl:'Play',
     animNote:(d,h,r)=>`${d} · heading ${h}° · heave ${r.heave.sig.toFixed(2)} m p-p, pitch ${r.pitch.sig.toFixed(2)}°, roll ${r.roll.sig.toFixed(2)}° (significant). Motion is exaggerated to be visible (heave ×22 in pixels per metre, pitch and roll ×8); the numbers on the picture are the real instantaneous values; time runs 3× faster than real. The yellow reticle marks the main well centre on the drill floor.`,
-    polarNote:(t)=>`At ${t}. The envelope depends only on the forecast, not on the heading you choose; the dots mark the three scenario headings. Significant peak-to-peak, metres; headings in ° true. Arrows show where wind (W) and swells (S1, S2) come from. Move the forecast-step slider below to change the time.`,
+    polarNote:(t)=>`At ${t}. The envelope depends only on the forecast, not on the heading you choose; the dots mark the three scenario headings. Significant peak-to-peak, metres; headings in ° true. Arrows show where wind (W) and swells (S1, S2) come from. Use the forecast-step slider under the animation to change the time.`,
     thTime:'Time', thHs:'Hs', thWind:'Wind', thSwell:'Dom. swell', thRel:'Rel.', thHeaveSig:'Heave sig', thHeaveMax:'Heave max', thRtSig:'Drill fl. sig', thRtMax:'Drill fl. max',
     thPitchSig:'Pitch sig', thPitchMax:'Pitch max', thRollSig:'Roll sig', thRollMax:'Roll max', thTz:'Tz', thHeli:'Helideck green', thHeliP:'Pitch / roll 20-min max', thHeliHr:'VArf max', thAW:'AW139', thS92:'S-92',
     grpMotion:'Vessel motions', grpHeli:'Helideck (HMS)',
@@ -661,7 +662,7 @@ const PBS = (function () {
     s3:'3 ·', chartTitle:'Movimentos significativos ao longo da previsão', polarTitle:'Movimento vertical do drill floor vs aproamento',
     animTitle:'Movimento da sonda neste aproamento (animação)', animStepLbl:'Passo da previsão', animPause:'Pausar', animPlayLbl:'Reproduzir',
     animNote:(d,h,r)=>`${d} · aproamento ${h}° · heave ${r.heave.sig.toFixed(2)} m p-p, pitch ${r.pitch.sig.toFixed(2)}°, roll ${r.roll.sig.toFixed(2)}° (significativos). O movimento é exagerado para ficar visível (heave ×22 em pixels por metro, pitch e roll ×8); os números na imagem são os valores instantâneos reais; o tempo corre 3× mais rápido que o real. A mira amarela marca o centro do poço principal no drill floor.`,
-    polarNote:(t)=>`Em ${t}. O envelope depende só da previsão, não do aproamento escolhido; os pontos marcam os três aproamentos dos cenários. Pico a pico significativo, metros; aproamentos em ° verdadeiros. Setas mostram de onde vêm o vento (W) e os swells (S1, S2). Mova o controle de passo da previsão abaixo para mudar o horário.`,
+    polarNote:(t)=>`Em ${t}. O envelope depende só da previsão, não do aproamento escolhido; os pontos marcam os três aproamentos dos cenários. Pico a pico significativo, metros; aproamentos em ° verdadeiros. Setas mostram de onde vêm o vento (W) e os swells (S1, S2). Use o controle de passo da previsão sob a animação para mudar o horário.`,
     thTime:'Hora', thHs:'Hs', thWind:'Vento', thSwell:'Swell dom.', thRel:'Rel.', thHeaveSig:'Heave sig', thHeaveMax:'Heave máx', thRtSig:'Drill fl. sig', thRtMax:'Drill fl. máx',
     thPitchSig:'Pitch sig', thPitchMax:'Pitch máx', thRollSig:'Roll sig', thRollMax:'Roll máx', thTz:'Tz', thHeli:'Heliponto verde', thHeliP:'Pitch / roll máx 20 min', thHeliHr:'VArf máx', thAW:'AW139', thS92:'S-92',
     grpMotion:'Movimentos da embarcação', grpHeli:'Heliponto (HMS)',
@@ -874,7 +875,7 @@ const PBS = (function () {
   $('animStep').addEventListener('input',e=>{ RESULTS.step=+e.target.value; renderStep(); });
   $('animPlay').addEventListener('click',()=>{ ANIM.playing=!ANIM.playing; $('animPlay').textContent=ANIM.playing?t('animPause'):t('animPlayLbl'); });
   function tsChart(scen,rows){
-    const W=640,H=330,ml=44,mr=12,mt=10,mb=28, panels=[{k:'heave',t:t('chHeave'),ref:REF.heave},{k:'pitch',t:t('chPitch'),ref:REF.pitch},{k:'roll',t:t('chRoll'),ref:REF.roll}];
+    const W=1100,H=330,ml=44,mr=12,mt=10,mb=28, panels=[{k:'heave',t:t('chHeave'),ref:REF.heave},{k:'pitch',t:t('chPitch'),ref:REF.pitch},{k:'roll',t:t('chRoll'),ref:REF.roll}];
     const ph=(H-mt-mb)/3, n=rows.length, x=i=>ml+(W-ml-mr)*i/(n-1);
     let g=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:100%;height:auto;display:block" role="img" aria-label="Significant motions over the forecast for each heading scenario">`;
     panels.forEach((p,pi)=>{ const y0=mt+pi*ph, y1=y0+ph-8; let vmax=p.ref*1.05; scen.forEach(s=>s.steps.forEach(st=>{ vmax=Math.max(vmax,st.res[p.k].sig*1.1); }));
@@ -889,7 +890,7 @@ const PBS = (function () {
   }
   function polarChart(vals,scen,row){
     const S=300,c=S/2,R=112; const vmax=Math.max(REF.heave,...vals.map(v=>v.v))*1.05;
-    let g=`<svg viewBox="0 0 ${S} ${S}" width="100%" style="max-width:320px;height:auto;display:block;margin:0 auto" role="img" aria-label="Drill floor vertical motion versus heading">`;
+    let g=`<svg viewBox="0 0 ${S} ${S}" width="100%" style="max-width:440px;height:auto;display:block;margin:0 auto" role="img" aria-label="Drill floor vertical motion versus heading">`;
     [0.25,0.5,0.75,1].forEach(f=>{ g+=`<circle cx="${c}" cy="${c}" r="${R*f}" fill="none" stroke="var(--grid)"/><text x="${c+3}" y="${c-R*f+10}" font-size="9" fill="var(--muted)">${(vmax*f).toFixed(1)}</text>`; });
     g+=`<circle cx="${c}" cy="${c}" r="${R*REF.heave/vmax}" fill="none" stroke="var(--yellow)" stroke-dasharray="4 3"/>`;
     ['N','E','S','W'].forEach((l,i)=>{ const a=i*90*Math.PI/180; g+=`<text x="${c+(R+14)*Math.sin(a)}" y="${c-(R+14)*Math.cos(a)+4}" font-size="11" text-anchor="middle" font-weight="600">${l}</text>`; });
