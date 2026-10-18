@@ -18,14 +18,15 @@
   --ok-bg:#E6F6DD; --ok-fg:#2F6B10; --warn-bg:#FFEFC2; --warn-fg:#6E5200; --bad-bg:#FBDCD9; --bad-fg:#8E1A12;
   --cell-ok:#78D64B; --cell-warn:#F6BE00; --cell-bad:#DA291C;
   --s1:#005670; --s2:#FF8F1C; --s3:#78D64B;
+  --anim-sky:#EAF1F4; --anim-sea:#2E88A8; --anim-hull:#4B4F54; --anim-deck:#C9D3D8; --anim-heli:#78D64B; --anim-line:#1E2A30;
   --display:'Quantico',"Helvetica Neue",Arial,sans-serif; --body:'Titillium Web',"Helvetica Neue",Arial,sans-serif;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
   --bg:#0B1C22; --panel:#11272F; --fg:#E6EDF0; --muted:#9FB0B8; --line:#2A3F48; --line-soft:#1D323A; --head-bg:#003D4C; --grid:#223840; --h2:#9AD3E6; --link:#9AD3E6;
-  --ok-bg:#1E3D14; --ok-fg:#B6EE9A; --warn-bg:#4A3A00; --warn-fg:#FFE28A; --bad-bg:#4A1410; --bad-fg:#FFB3AC; --s1:#5FB8D6; color-scheme:dark } }
+  --ok-bg:#1E3D14; --ok-fg:#B6EE9A; --warn-bg:#4A3A00; --warn-fg:#FFE28A; --bad-bg:#4A1410; --bad-fg:#FFB3AC; --s1:#5FB8D6; --anim-sky:#0E222A; --anim-sea:#1F6E88; --anim-hull:#7B838A; --anim-deck:#3C4C54; --anim-line:#DCE6EA; color-scheme:dark } }
 :root[data-theme="dark"]{
   --bg:#0B1C22; --panel:#11272F; --fg:#E6EDF0; --muted:#9FB0B8; --line:#2A3F48; --line-soft:#1D323A; --head-bg:#003D4C; --grid:#223840; --h2:#9AD3E6; --link:#9AD3E6;
-  --ok-bg:#1E3D14; --ok-fg:#B6EE9A; --warn-bg:#4A3A00; --warn-fg:#FFE28A; --bad-bg:#4A1410; --bad-fg:#FFB3AC; --s1:#5FB8D6; color-scheme:dark }
+  --ok-bg:#1E3D14; --ok-fg:#B6EE9A; --warn-bg:#4A3A00; --warn-fg:#FFE28A; --bad-bg:#4A1410; --bad-fg:#FFB3AC; --s1:#5FB8D6; --anim-sky:#0E222A; --anim-sea:#1F6E88; --anim-hull:#7B838A; --anim-deck:#3C4C54; --anim-line:#DCE6EA; color-scheme:dark }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;margin:0}
@@ -52,6 +53,9 @@ header a{color:#fff;font-size:13px}
 .heli .hdr .lim{font-size:12px;color:var(--muted);margin-top:2px}
 .strip .r .n small{display:block;font-weight:400;color:var(--muted);font-size:11px}
 .moon{font-size:11px;color:var(--muted)}
+.animwrap{border:1px solid var(--line);max-width:100%}
+.animwrap svg{display:block;height:auto}
+input[type=range]{accent-color:var(--teal)}
 .heli.soon{border-style:dashed}
 .heli.soon h3{color:var(--muted)}
 main .wrap{padding-block:22px 40px;display:grid;gap:20px}
@@ -258,7 +262,44 @@ T-storm Probability &lt; 30 % ≥ 30 % ≥ 60 %</textarea>
   <h2 id="detailTitle"></h2>
   <div class="charts">
     <div><h3 data-i18n="chartTitle"></h3><div id="chartTS"></div><div class="legend" id="legendTS"></div></div>
-    <div><h3 data-i18n="polarTitle"></h3><div id="chartPolar"></div><div class="small" id="polarNote"></div></div>
+    <div><h3 data-i18n="polarTitle"></h3><div id="chartPolar"></div><div class="small" id="polarNote"></div>
+      <h3 style="margin-top:16px" data-i18n="animTitle"></h3>
+      <div class="animwrap"><svg id="animSvg" viewBox="0 0 540 230" width="100%" role="img" aria-label="Animated side view of the Petrobras 10000 moving in heave and pitch, with a bow view for roll">
+        <defs><clipPath id="seaClip"><rect x="0" y="0" width="540" height="230"/></clipPath></defs>
+        <rect x="0" y="0" width="540" height="230" fill="var(--anim-sky)"/>
+        <g id="animShip">
+          <path d="M40 118 L40 172 Q60 180 90 180 L300 180 Q335 178 360 150 L362 100 L336 100 L336 118 Z" fill="var(--anim-hull)" stroke="var(--anim-line)" stroke-width="1.2"/>
+          <rect x="40" y="110" width="322" height="8" fill="var(--anim-deck)" stroke="var(--anim-line)" stroke-width="1"/>
+          <rect x="56" y="88" width="34" height="22" fill="var(--anim-deck)" stroke="var(--anim-line)" stroke-width="1"/>
+          <rect x="64" y="70" width="8" height="18" fill="var(--anim-line)"/>
+          <rect x="120" y="96" width="60" height="14" fill="var(--anim-deck)" stroke="var(--anim-line)" stroke-width="1"/>
+          <rect x="186" y="100" width="48" height="10" fill="var(--anim-deck)" stroke="var(--anim-line)" stroke-width="1"/>
+          <path d="M194 100 L200 22 L220 22 L226 100 Z" fill="none" stroke="var(--anim-line)" stroke-width="1.6"/>
+          <path d="M194 100 L226 22 M226 100 L194 22 M197 80 L223 80 M199 60 L221 60 M200 40 L220 40" stroke="var(--anim-line)" stroke-width=".8" fill="none"/>
+          <rect x="288" y="78" width="46" height="32" fill="var(--anim-deck)" stroke="var(--anim-line)" stroke-width="1"/>
+          <rect x="296" y="66" width="12" height="12" fill="var(--anim-deck)" stroke="var(--anim-line)" stroke-width="1"/>
+          <path d="M334 80 L392 80 L392 76 L334 76 Z" fill="var(--anim-heli)" stroke="var(--anim-line)" stroke-width="1"/>
+          <path d="M340 80 L350 100 M386 80 L366 100" stroke="var(--anim-line)" stroke-width="1" fill="none"/>
+          <circle id="animRT" cx="210" cy="100" r="4.5" fill="var(--red)" stroke="#fff" stroke-width="1.2"/>
+        </g>
+        <path id="animSea" d="" fill="var(--anim-sea)" fill-opacity=".75" clip-path="url(#seaClip)"/>
+        <line x1="210" y1="100" x2="210" y2="100" id="animRTline" stroke="var(--red)" stroke-width="1.2" stroke-dasharray="3 3"/>
+        <g transform="translate(438,40)">
+          <rect x="-8" y="-8" width="106" height="150" fill="var(--anim-sky)" stroke="var(--line)" stroke-width="1"/>
+          <g id="animBow">
+            <path d="M15 70 L15 112 Q45 134 75 112 L75 70 Z" fill="var(--anim-hull)" stroke="var(--anim-line)" stroke-width="1.2"/>
+            <rect x="15" y="64" width="60" height="6" fill="var(--anim-deck)" stroke="var(--anim-line)" stroke-width="1"/>
+            <path d="M36 64 L39 8 L51 8 L54 64 Z" fill="none" stroke="var(--anim-line)" stroke-width="1.4"/>
+            <path d="M36 64 L54 8 M54 64 L36 8" stroke="var(--anim-line)" stroke-width=".7"/>
+          </g>
+          <line x1="-8" y1="95" x2="98" y2="95" stroke="var(--anim-sea)" stroke-width="2" opacity=".8"/>
+          <text x="45" y="134" font-size="9" text-anchor="middle" fill="var(--muted)">ROLL</text>
+        </g>
+        <text id="animLbl" x="420" y="222" font-size="10" text-anchor="end" fill="var(--muted)"></text>
+      </svg></div>
+      <div class="row" style="margin-top:8px;align-items:center"><div style="flex:1 1 160px"><label for="animStep" data-i18n="animStepLbl" style="margin-bottom:2px"></label><input type="range" id="animStep" min="0" max="0" value="0" step="1" style="width:100%"></div><div style="flex:0 0 auto"><button class="secondary" id="animPlay" style="padding:8px 14px" data-i18n="animPause"></button></div></div>
+      <div class="small" id="animNote"></div>
+    </div>
   </div>
   <div class="tblwrap"><table id="tbl"></table></div>
   <p class="small" data-i18n="tblNote"></p>
@@ -558,6 +599,8 @@ const PBS = (function () {
     heavePP:'Heave p-p', drillFloor:'Drill floor', pitch:'Pitch', roll:'Roll', index:'index',
     issued:'forecast issued', position:'position', valid:'valid period', maxHs:'max forecast Hs',
     s3:'3 ·', chartTitle:'Significant motions over the forecast', polarTitle:'Drill-floor vertical motion vs heading',
+    animTitle:'Rig motion for this heading (animated)', animStepLbl:'Forecast step', animPause:'Pause', animPlayLbl:'Play',
+    animNote:(d,h,r)=>`${d} · heading ${h}° · heave ${r.heave.sig.toFixed(2)} m p-p, pitch ${r.pitch.sig.toFixed(2)}°, roll ${r.roll.sig.toFixed(2)}° (significant). Motion is exaggerated to be visible: heave ×15, pitch and roll ×8; time runs 3× faster than real. The red dot is the main well centre on the drill floor.`,
     polarNote:(t,n)=>`At ${t} (worst step for ${n}). Significant peak-to-peak, metres; headings in ° true. Arrows show where wind (W) and swells (S1, S2) come from.`,
     thTime:'Time', thHs:'Hs', thWind:'Wind', thSwell:'Dom. swell', thRel:'Rel.', thHeaveSig:'Heave sig', thHeaveMax:'Heave max', thRtSig:'Drill fl. sig', thRtMax:'Drill fl. max',
     thPitchSig:'Pitch sig', thPitchMax:'Pitch max', thRollSig:'Roll sig', thRollMax:'Roll max', thTz:'Tz', thHeli:'Helideck green', thHeliP:'Pitch / roll 20-min max', thHeliHr:'VArf max', thAW:'AW139', thS92:'S-92',
@@ -616,6 +659,8 @@ const PBS = (function () {
     heavePP:'Heave p-p', drillFloor:'Drill floor', pitch:'Pitch', roll:'Roll', index:'índice',
     issued:'previsão emitida', position:'posição', valid:'período válido', maxHs:'Hs máx. prevista',
     s3:'3 ·', chartTitle:'Movimentos significativos ao longo da previsão', polarTitle:'Movimento vertical do drill floor vs aproamento',
+    animTitle:'Movimento da sonda neste aproamento (animação)', animStepLbl:'Passo da previsão', animPause:'Pausar', animPlayLbl:'Reproduzir',
+    animNote:(d,h,r)=>`${d} · aproamento ${h}° · heave ${r.heave.sig.toFixed(2)} m p-p, pitch ${r.pitch.sig.toFixed(2)}°, roll ${r.roll.sig.toFixed(2)}° (significativos). O movimento é exagerado para ficar visível: heave ×15, pitch e roll ×8; o tempo corre 3× mais rápido que o real. O ponto vermelho é o centro do poço principal no drill floor.`,
     polarNote:(t,n)=>`Em ${t} (pior passo para ${n}). Pico a pico significativo, metros; aproamentos em ° verdadeiros. Setas mostram de onde vêm o vento (W) e os swells (S1, S2).`,
     thTime:'Hora', thHs:'Hs', thWind:'Vento', thSwell:'Swell dom.', thRel:'Rel.', thHeaveSig:'Heave sig', thHeaveMax:'Heave máx', thRtSig:'Drill fl. sig', thRtMax:'Drill fl. máx',
     thPitchSig:'Pitch sig', thPitchMax:'Pitch máx', thRollSig:'Roll sig', thRollMax:'Roll máx', thTz:'Tz', thHeli:'Heliponto verde', thHeliP:'Pitch / roll máx 20 min', thHeliHr:'VArf máx', thAW:'AW139', thS92:'S-92',
@@ -783,9 +828,43 @@ const PBS = (function () {
     const wi=s.worst; const r=rows[wi];
     const vals=sweep.map(sc=>({h:sc.heading,v:sc.steps[wi].res.rt.sig}));
     $('chartPolar').innerHTML=polarChart(vals,scen,r);
+    $('animStep').max=rows.length-1; $('animStep').value=wi; setAnim(wi); startAnim();
     $('polarNote').textContent=t('polarNote')(fmtDT(r.valid),t(s.nameKey));
     $('detail').hidden=false;
   }
+  // ---- animation ----
+  const ANIM={raf:null,t0:0,playing:true,step:0,sig:null,parts:null};
+  const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function mkSignal(amp,Tz,seed){ // irregular motion: three components around Tz, std ≈ amp/2 (amp = significant single amplitude)
+    const w=2*Math.PI/Math.max(Tz,4); const comps=[[0.55,0.82],[0.65,1.0],[0.45,1.27]];
+    return t=>comps.reduce((a,[k,f],i)=>a+amp*k*Math.sin(w*f*t+seed*(i+1)*2.1),0);
+  }
+  function setAnim(step){
+    const s=RESULTS.scen[SEL]; const st=s.steps[Math.max(0,Math.min(step,s.steps.length-1))]; const r=st.res; ANIM.step=step;
+    const Gh=15, Ga=8, px=1.37;  // 1.37 px per metre at this drawing scale
+    ANIM.sig={ heave:mkSignal(r.heave.sig/2*Gh*px, r.heave.Tz, 0.3), pitch:mkSignal(r.pitch.sig*Ga, r.pitch.Tz, 1.1), roll:mkSignal(r.roll.sig*Ga, r.roll.Tz, 2.3),
+      wave:(r.heave.sig/2)*Gh*px*0.6, waveT:r.heave.Tz>0?r.heave.Tz:9 };
+    $('animNote').textContent=t('animNote')(fmtDT(st.row.valid),pad3(s.heading),r);
+    $('animLbl').textContent=`Hs ${st.row.hs_total.toFixed(1)} m`;
+    if(reduced||!ANIM.playing) drawAnim(1.5);
+  }
+  function drawAnim(tt){
+    const g=ANIM.sig; if(!g) return;
+    const h=g.heave(tt), p=g.pitch(tt), ro=g.roll(tt);
+    $('animShip').setAttribute('transform',`translate(0,${(-h).toFixed(2)}) rotate(${(-p).toFixed(3)} 196 140)`);
+    $('animBow').setAttribute('transform',`rotate(${ro.toFixed(3)} 45 95)`);
+    // drill-floor vertical excursion marker: rotate point (210,100) about (196,140) and lift
+    const a=-p*Math.PI/180, dx=210-196, dy=100-140; const y=140+dx*Math.sin(a)+dy*Math.cos(a)-h;
+    const L=$('animRTline'); L.setAttribute('x1',396); L.setAttribute('x2',396); L.setAttribute('y1',100); L.setAttribute('y2',y.toFixed(1));
+    // sea surface
+    let d='M0 230 L0 140 '; const k=2*Math.PI/95, ph=2*Math.PI*tt/g.waveT;
+    for(let x=0;x<=540;x+=10) d+=`L${x} ${(140+g.wave*Math.sin(k*x-ph)+0.4*g.wave*Math.sin(1.9*k*x-1.4*ph)).toFixed(1)} `;
+    d+='L540 230 Z'; $('animSea').setAttribute('d',d);
+  }
+  function animLoop(ts){ if(!ANIM.t0) ANIM.t0=ts; const tt=(ts-ANIM.t0)/1000*3; if(ANIM.playing&&ANIM.sig) drawAnim(tt); ANIM.raf=requestAnimationFrame(animLoop); }
+  function startAnim(){ if(reduced){ ANIM.playing=false; $('animPlay').hidden=true; drawAnim(1.5); return; } if(!ANIM.raf) ANIM.raf=requestAnimationFrame(animLoop); }
+  $('animStep').addEventListener('input',e=>setAnim(+e.target.value));
+  $('animPlay').addEventListener('click',()=>{ ANIM.playing=!ANIM.playing; $('animPlay').textContent=ANIM.playing?t('animPause'):t('animPlayLbl'); });
   function tsChart(scen,rows){
     const W=640,H=330,ml=44,mr=12,mt=10,mb=28, panels=[{k:'heave',t:t('chHeave'),ref:REF.heave},{k:'pitch',t:t('chPitch'),ref:REF.pitch},{k:'roll',t:t('chRoll'),ref:REF.roll}];
     const ph=(H-mt-mb)/3, n=rows.length, x=i=>ml+(W-ml-mr)*i/(n-1);
