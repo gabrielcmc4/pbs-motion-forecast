@@ -601,7 +601,7 @@ const PBS = (function () {
     s3:'3 ·', chartTitle:'Significant motions over the forecast', polarTitle:'Drill-floor vertical motion vs heading',
     animTitle:'Rig motion for this heading (animated)', animStepLbl:'Forecast step', animPause:'Pause', animPlayLbl:'Play',
     animNote:(d,h,r)=>`${d} · heading ${h}° · heave ${r.heave.sig.toFixed(2)} m p-p, pitch ${r.pitch.sig.toFixed(2)}°, roll ${r.roll.sig.toFixed(2)}° (significant). Motion is exaggerated to be visible (heave ×22 in pixels per metre, pitch and roll ×8); the numbers on the picture are the real instantaneous values; time runs 3× faster than real. The yellow reticle marks the main well centre on the drill floor.`,
-    polarNote:(t,n)=>`At ${t} (worst step for ${n}). Significant peak-to-peak, metres; headings in ° true. Arrows show where wind (W) and swells (S1, S2) come from.`,
+    polarNote:(t)=>`At ${t}. The envelope depends only on the forecast, not on the heading you choose; the dots mark the three scenario headings. Significant peak-to-peak, metres; headings in ° true. Arrows show where wind (W) and swells (S1, S2) come from. Move the forecast-step slider below to change the time.`,
     thTime:'Time', thHs:'Hs', thWind:'Wind', thSwell:'Dom. swell', thRel:'Rel.', thHeaveSig:'Heave sig', thHeaveMax:'Heave max', thRtSig:'Drill fl. sig', thRtMax:'Drill fl. max',
     thPitchSig:'Pitch sig', thPitchMax:'Pitch max', thRollSig:'Roll sig', thRollMax:'Roll max', thTz:'Tz', thHeli:'Helideck green', thHeliP:'Pitch / roll 20-min max', thHeliHr:'VArf max', thAW:'AW139', thS92:'S-92',
     grpMotion:'Vessel motions', grpHeli:'Helideck (HMS)',
@@ -661,7 +661,7 @@ const PBS = (function () {
     s3:'3 ·', chartTitle:'Movimentos significativos ao longo da previsão', polarTitle:'Movimento vertical do drill floor vs aproamento',
     animTitle:'Movimento da sonda neste aproamento (animação)', animStepLbl:'Passo da previsão', animPause:'Pausar', animPlayLbl:'Reproduzir',
     animNote:(d,h,r)=>`${d} · aproamento ${h}° · heave ${r.heave.sig.toFixed(2)} m p-p, pitch ${r.pitch.sig.toFixed(2)}°, roll ${r.roll.sig.toFixed(2)}° (significativos). O movimento é exagerado para ficar visível (heave ×22 em pixels por metro, pitch e roll ×8); os números na imagem são os valores instantâneos reais; o tempo corre 3× mais rápido que o real. A mira amarela marca o centro do poço principal no drill floor.`,
-    polarNote:(t,n)=>`Em ${t} (pior passo para ${n}). Pico a pico significativo, metros; aproamentos em ° verdadeiros. Setas mostram de onde vêm o vento (W) e os swells (S1, S2).`,
+    polarNote:(t)=>`Em ${t}. O envelope depende só da previsão, não do aproamento escolhido; os pontos marcam os três aproamentos dos cenários. Pico a pico significativo, metros; aproamentos em ° verdadeiros. Setas mostram de onde vêm o vento (W) e os swells (S1, S2). Mova o controle de passo da previsão abaixo para mudar o horário.`,
     thTime:'Hora', thHs:'Hs', thWind:'Vento', thSwell:'Swell dom.', thRel:'Rel.', thHeaveSig:'Heave sig', thHeaveMax:'Heave máx', thRtSig:'Drill fl. sig', thRtMax:'Drill fl. máx',
     thPitchSig:'Pitch sig', thPitchMax:'Pitch máx', thRollSig:'Roll sig', thRollMax:'Roll máx', thTz:'Tz', thHeli:'Heliponto verde', thHeliP:'Pitch / roll máx 20 min', thHeliHr:'VArf máx', thAW:'AW139', thS92:'S-92',
     grpMotion:'Movimentos da embarcação', grpHeli:'Heliponto (HMS)',
@@ -793,7 +793,9 @@ const PBS = (function () {
       scen.push(Object.assign(scenarioFor(ship,swDir,rows),{nameKey:'bowSwell',noteKey:'first48'}));
       const wd=meanDir(first.map(r=>r.wind10_dir_deg),first.map(r=>r.wind10_kt)); scen.push(Object.assign(scenarioFor(ship,wd,rows),{nameKey:'bowWind',noteKey:'first48'}));
     }
-    RESULTS={ship,scen,sweep,rows,missing:Math.round((rows[rows.length-1].valid-rows[0].valid)/3600e3/6+1-rows.length)}; SEL=0;
+    // default step for the polar/animation: the roughest forecast step, judged on the whole heading envelope (independent of any heading choice)
+    let step=0, worstEnv=-1; rows.forEach((_,i)=>{ const env=Math.max(...sweep.map(sc=>sc.steps[i].res.rt.sig)); if(env>worstEnv){ worstEnv=env; step=i; } });
+    RESULTS={ship,scen,sweep,rows,step,missing:Math.round((rows[rows.length-1].valid-rows[0].valid)/3600e3/6+1-rows.length)}; SEL=0;
     renderSummary(); renderDetail();
   }
   function renderSummary(){
@@ -825,12 +827,16 @@ const PBS = (function () {
     $('tbl').innerHTML=html;
     $('chartTS').innerHTML=tsChart(scen,rows);
     $('legendTS').innerHTML=scen.map((sc,i)=>`<span><i style="background:${SERIES[i]}"></i>${t(sc.nameKey)} ${pad3(sc.heading)}°</span>`).join('');
-    const wi=s.worst; const r=rows[wi];
+    // polar and animation follow one forecast step chosen with the slider; they never depend on the selected heading card
+    $('animStep').max=rows.length-1; $('animStep').value=RESULTS.step; renderStep(); startAnim();
+    $('detail').hidden=false;
+  }
+  function renderStep(){
+    const {scen,sweep,rows}=RESULTS; const wi=RESULTS.step; const r=rows[wi];
     const vals=sweep.map(sc=>({h:sc.heading,v:sc.steps[wi].res.rt.sig}));
     $('chartPolar').innerHTML=polarChart(vals,scen,r);
-    $('animStep').max=rows.length-1; $('animStep').value=wi; setAnim(wi); startAnim();
-    $('polarNote').textContent=t('polarNote')(fmtDT(r.valid),t(s.nameKey));
-    $('detail').hidden=false;
+    $('polarNote').textContent=t('polarNote')(fmtDT(r.valid));
+    setAnim(wi);
   }
   // ---- animation ----
   const ANIM={raf:null,t0:0,playing:true,step:0,sig:null,parts:null};
@@ -865,7 +871,7 @@ const PBS = (function () {
   }
   function animLoop(ts){ if(!ANIM.t0) ANIM.t0=ts; const tt=(ts-ANIM.t0)/1000*3; if(ANIM.playing&&ANIM.sig) drawAnim(tt); ANIM.raf=requestAnimationFrame(animLoop); }
   function startAnim(){ if(reduced){ ANIM.playing=false; $('animPlay').hidden=true; drawAnim(1.5); return; } if(!ANIM.raf) ANIM.raf=requestAnimationFrame(animLoop); }
-  $('animStep').addEventListener('input',e=>setAnim(+e.target.value));
+  $('animStep').addEventListener('input',e=>{ RESULTS.step=+e.target.value; renderStep(); });
   $('animPlay').addEventListener('click',()=>{ ANIM.playing=!ANIM.playing; $('animPlay').textContent=ANIM.playing?t('animPause'):t('animPlayLbl'); });
   function tsChart(scen,rows){
     const W=640,H=330,ml=44,mr=12,mt=10,mb=28, panels=[{k:'heave',t:t('chHeave'),ref:REF.heave},{k:'pitch',t:t('chPitch'),ref:REF.pitch},{k:'roll',t:t('chRoll'),ref:REF.roll}];
