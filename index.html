@@ -621,7 +621,7 @@ const PBS = (function () {
     issued:'forecast issued', position:'position', valid:'valid period', maxHs:'max forecast Hs',
     s3:'3 ·', chartTitle:'Significant motions over the forecast', polarTitle:'Drill-floor vertical motion vs heading',
     animTitle:'Rig motion for this heading (animated)', animStepLbl:'Forecast step', animPause:'Pause', animPlayLbl:'Play',
-    animNote:(d,h,r)=>`${d} · heading ${h}° · heave ${r.heave.sig.toFixed(2)} m p-p, pitch ${r.pitch.sig.toFixed(2)}°, roll ${r.roll.sig.toFixed(2)}° (significant). Motion is exaggerated to be visible (heave ×22 in pixels per metre, pitch and roll ×8); the numbers on the picture are the real instantaneous values; time runs 3× faster than real. The yellow reticle marks the main well centre on the drill floor.`,
+    animNote:(d,h,r)=>`${d} · heading ${h}° · heave ${r.heave.sig.toFixed(2)} m p-p, pitch ${r.pitch.sig.toFixed(2)}°, roll ${r.roll.sig.toFixed(2)}° (significant). Motion is exaggerated to be visible (heave ×10 in pixels per metre, pitch and roll ×8); the numbers on the picture are the real instantaneous values; time runs in real time. The yellow reticle marks the main well centre on the drill floor.`,
     polarNote:(t)=>`At ${t}. The envelope depends only on the forecast, not on the heading you choose; the dots mark the three scenario headings. Significant peak-to-peak, metres; headings in ° true. Arrows show where wind (W) and swells (S1, S2) come from. Use the forecast-step slider under the animation to change the time.`,
     thTime:'Time', thHs:'Hs', thWind:'Wind', thSwell:'Dom. swell', thRel:'Rel.', thHeaveSig:'Heave sig', thHeaveMax:'Heave max', thRtSig:'Drill fl. sig', thRtMax:'Drill fl. max',
     thPitchSig:'Pitch sig', thPitchMax:'Pitch max', thRollSig:'Roll sig', thRollMax:'Roll max', thTz:'Tz', thHeli:'Helideck green', thHeliP:'Pitch / roll 20-min max', thHeliHr:'VArf max', thAW:'AW139', thS92:'S-92',
@@ -682,7 +682,7 @@ const PBS = (function () {
     issued:'previsão emitida', position:'posição', valid:'período válido', maxHs:'Hs máx. prevista',
     s3:'3 ·', chartTitle:'Movimentos significativos ao longo da previsão', polarTitle:'Movimento vertical do drill floor vs aproamento',
     animTitle:'Movimento da sonda neste aproamento (animação)', animStepLbl:'Passo da previsão', animPause:'Pausar', animPlayLbl:'Reproduzir',
-    animNote:(d,h,r)=>`${d} · aproamento ${h}° · heave ${r.heave.sig.toFixed(2)} m p-p, pitch ${r.pitch.sig.toFixed(2)}°, roll ${r.roll.sig.toFixed(2)}° (significativos). O movimento é exagerado para ficar visível (heave ×22 em pixels por metro, pitch e roll ×8); os números na imagem são os valores instantâneos reais; o tempo corre 3× mais rápido que o real. A mira amarela marca o centro do poço principal no drill floor.`,
+    animNote:(d,h,r)=>`${d} · aproamento ${h}° · heave ${r.heave.sig.toFixed(2)} m p-p, pitch ${r.pitch.sig.toFixed(2)}°, roll ${r.roll.sig.toFixed(2)}° (significativos). O movimento é exagerado para ficar visível (heave ×10 em pixels por metro, pitch e roll ×8); os números na imagem são os valores instantâneos reais; o tempo corre em tempo real. A mira amarela marca o centro do poço principal no drill floor.`,
     polarNote:(t)=>`Em ${t}. O envelope depende só da previsão, não do aproamento escolhido; os pontos marcam os três aproamentos dos cenários. Pico a pico significativo, metros; aproamentos em ° verdadeiros. Setas mostram de onde vêm o vento (W) e os swells (S1, S2). Use o controle de passo da previsão sob a animação para mudar o horário.`,
     thTime:'Hora', thHs:'Hs', thWind:'Vento', thSwell:'Swell dom.', thRel:'Rel.', thHeaveSig:'Heave sig', thHeaveMax:'Heave máx', thRtSig:'Drill fl. sig', thRtMax:'Drill fl. máx',
     thPitchSig:'Pitch sig', thPitchMax:'Pitch máx', thRollSig:'Roll sig', thRollMax:'Roll máx', thTz:'Tz', thHeli:'Heliponto verde', thHeliP:'Pitch / roll máx 20 min', thHeliHr:'VArf máx', thAW:'AW139', thS92:'S-92',
@@ -872,7 +872,7 @@ const PBS = (function () {
   }
   function setAnim(step){
     const s=RESULTS.scen[SEL]; const st=s.steps[Math.max(0,Math.min(step,s.steps.length-1))]; const r=st.res; ANIM.step=step;
-    const Gh=22, Ga=8;  // visual gains: 1 m of heave -> 22 px, angles x8
+    const Gh=10, Ga=8;  // visual gains: 1 m of heave -> 22 px, angles x8
     ANIM.sig={ heave:mkSignal(r.heave.sig/2*Gh, r.heave.Tz, 0.3), pitch:mkSignal(r.pitch.sig*Ga, r.pitch.Tz, 1.1), roll:mkSignal(r.roll.sig*Ga, r.roll.Tz, 2.3), Gh, Ga,
       wave:Math.min(28,(st.row.hs_total/2)*7), waveT:r.heave.Tz>0?r.heave.Tz:9 };
     $('animNote').textContent=t('animNote')(fmtDT(st.row.valid),pad3(s.heading),r)+(HELI_LIGHT?' '+t('heliLightNote'):'');
@@ -901,7 +901,7 @@ const PBS = (function () {
     $('hudH').textContent=(hm>=0?'+':'')+hm.toFixed(2)+' m'; $('hudRT').textContent=(rt>=0?'+':'')+rt.toFixed(2)+' m';
     $('hudP').textContent=(pd>=0?'+':'')+pd.toFixed(2)+'°'; $('hudR').textContent=(rd>=0?'+':'')+rd.toFixed(2)+'°';
   }
-  function animLoop(ts){ if(!ANIM.t0) ANIM.t0=ts; const tt=(ts-ANIM.t0)/1000*3; if(ANIM.playing&&ANIM.sig) drawAnim(tt); ANIM.raf=requestAnimationFrame(animLoop); }
+  function animLoop(ts){ if(!ANIM.t0) ANIM.t0=ts; const tt=(ts-ANIM.t0)/1000*1; if(ANIM.playing&&ANIM.sig) drawAnim(tt); ANIM.raf=requestAnimationFrame(animLoop); }
   function startAnim(){ if(reduced){ ANIM.playing=false; $('animPlay').hidden=true; drawAnim(1.5); return; } if(!ANIM.raf) ANIM.raf=requestAnimationFrame(animLoop); }
   $('animStep').addEventListener('input',e=>{ RESULTS.step=+e.target.value; renderStep(); });
   $('acSel').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{ AC=b.dataset.ac; $('acSel').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); if(RESULTS){ renderDetail(); } }));
