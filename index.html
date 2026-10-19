@@ -791,6 +791,7 @@ const PBS = (function () {
     return {heading,steps,worst,maxIdx:steps[worst].idx,meanIdx:meanIdx/steps.length,heliMin};
   }
   function dominantSwell(r){ return (r.swell2_hs>r.swell1_hs)?{d:r.swell2_dir_deg,hs:r.swell2_hs,tp:r.swell2_tp,n:r.swell2_dir}:{d:r.swell1_dir_deg,hs:r.swell1_hs,tp:r.swell1_tp,n:r.swell1_dir}; }
+  function dominantWave(r){ const c=[{d:r.wind10_dir_deg,hs:r.windsea_hs||0},{d:r.swell1_dir_deg,hs:r.swell1_hs||0},{d:r.swell2_dir_deg,hs:r.swell2_hs||0}].filter(x=>x.d!=null&&isFinite(x.d)); return c.length?c.reduce((m,x)=>x.hs>m.hs?x:m):{d:0,hs:0}; }
   function meanDir(angs,wts){ let x=0,y=0; angs.forEach((a,i)=>{ if(a==null) return; const w=wts?wts[i]:1; x+=w*Math.cos(a*Math.PI/180); y+=w*Math.sin(a*Math.PI/180); }); return deg(Math.atan2(y,x)*180/Math.PI); }
   function run(){
     setStatus($('runStatus'),t('stCalc')); $('run').disabled=true;
@@ -805,7 +806,8 @@ const PBS = (function () {
     const sweep=[]; for(let h=0;h<360;h+=5) sweep.push(scenarioFor(ship,h,rows));
     // model is symmetric head/following at zero speed, so h and h+180 tie; prefer the bow-to-weather side (DP practice)
     const swDir=meanDir(first.map(r=>dominantSwell(r).d),first.map(r=>dominantSwell(r).hs));
-    sweep.forEach(s=>{ s.weather=180-Math.abs(((swDir-s.heading+180)%360+360)%360-180); });
+    // break the tie on the step that decides the ranking: bow towards the biggest wave component (wind sea or swell) at that heading's worst step
+    sweep.forEach(s=>{ const dw=dominantWave(s.steps[s.worst].row); s.weather=180-Math.abs(((dw.d-s.heading+180)%360+360)%360-180); });
     const minIdx=Math.min(...sweep.map(s=>s.maxIdx));
     const near=sweep.filter(s=>s.maxIdx<=minIdx+0.02);
     let best=near[0]; for(const s of near){ if(s.weather>best.weather+1e-9||(Math.abs(s.weather-best.weather)<1e-9&&s.meanIdx<best.meanIdx)) best=s; }
