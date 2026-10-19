@@ -370,6 +370,9 @@ const PBS = (function () {
       // helideck-specific factors on the calibrated MRU motions (HMS v0.1, 201 forecast steps vs HMS 20-min maxima):
       // pitch matched the HMS (1.0); roll 1.7x too high on the HMS (0.59); heave rate kept at 1.0 pending the ibReader MAHR/SHR records
       k: { pitch: 1.0, roll: 0.59, hr: 1.0 },
+      // HMS v1.0 (18 Sep-18 Oct 2026, 165k ibReader 10-s records, 120 forecast steps): log(HMS 20-min value / model most-probable max)
+      // median b and spread s; deck green probability = weakest of the four limits (errors are strongly correlated)
+      ln: { hr: [-0.029, 0.324], pitch: [-0.046, 0.123], roll: [-0.12, 0.357], incl: [0.019, 0.135] },
       aircraft: {
         AW139: { label: 'AW139 (Cat. B)', day: { pitch: 3.0, roll: 3.0, incl: 3.5, heaveRate: 1.0, heave: 3.0 }, night: { pitch: 1.5, roll: 1.5, incl: 2.0, heaveRate: 0.5, heave: 1.5 } },
         S92:   { label: 'S-92 (Cat. A)',  day: { pitch: 2.0, roll: 2.0, incl: 2.5, heaveRate: 1.0, heave: 3.0 }, night: { pitch: 1.0, roll: 1.0, incl: 1.5, heaveRate: 0.5, heave: 1.5 } } } },
@@ -520,13 +523,14 @@ const PBS = (function () {
     const sVArf = H.k.hr * 4 * r.heli.sigma / Tz;                 // VArf is Rayleigh-distributed with this scale
     const out = { pitchMax: op + sp * mp(r.pitch.Tz), rollMax: orr + sr * mp(r.roll.Tz),
                   heaveMax: 2 * r.heli.sigma * mp(r.heli.Tz), hrMax: sVArf * mp(r.heli.Tz), night: !!isNight, aircraft: {} };
+    const erf = x => { const s = Math.sign(x), a = Math.abs(x), t = 1 / (1 + 0.3275911 * a);
+      return s * (1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-a * a)); };
+    const pl = (L, m, bs) => (m > 0 ? 0.5 * (1 + erf((Math.log(L / m) - bs[0]) / bs[1] / Math.SQRT2)) : 1);
     for (const [code, ac] of Object.entries(H.aircraft)) {
       const L = isNight ? ac.night : ac.day;
-      const Pp = pMax(sp, r.pitch.Tz, L.pitch - op, dur, H.sdlog.pitch);
-      const Pr = pMax(sr, r.roll.Tz, L.roll - orr, dur, H.sdlog.roll);
-      const Pi = pMax(sp, r.pitch.Tz, L.incl - op, dur, H.sdlog.pitch) * pMax(sr, r.roll.Tz, L.incl - orr, dur, H.sdlog.roll);
-      const Ph = pMax(sVArf, r.heli.Tz, L.heaveRate, dur, H.sdlog.hr);
-      out.aircraft[code] = { Ppitch: Pp, Proll: Pr, Pincl: Pi, PheaveRate: Ph, Pgreen: Ph * Math.min(Pp * Pr, Pi), limits: L };
+      const Pp = pl(L.pitch, out.pitchMax, H.ln.pitch), Pr = pl(L.roll, out.rollMax, H.ln.roll);
+      const Pi = pl(L.incl, out.pitchMax, H.ln.incl), Ph = pl(L.heaveRate, out.hrMax, H.ln.hr);
+      out.aircraft[code] = { Ppitch: Pp, Proll: Pr, Pincl: Pi, PheaveRate: Ph, Pgreen: Math.min(Pp, Pr, Pi, Ph), limits: L };
     }
     return out;
   }
@@ -646,7 +650,7 @@ const PBS = (function () {
     modelText:'Heave and pitch use the closed-form expressions of Jensen, Mansour & Pedersen (2004, <i>Ocean Engineering</i> 31) for a box hull of the same length, breadth and draught, corrected for block and waterplane coefficient, with an effective sectional added-mass ratio of 0.8. Roll is a linear single-degree-of-freedom response with effective wave-slope excitation, radius of gyration from the stability weight distribution and an equivalent linear damping ratio of 0.22 fitted to the MRU record. Each forecast line is converted to three sea-state partitions (wind sea, primary and secondary swell) with JONSWAP spectra (DNV-RP-C205 peak enhancement) and cos² directional spreading; motion statistics come from the response spectrum (significant = 2σ, most probable maximum = σ√(2 ln N)).',
     pLBP:'LBP × breadth', pDraft:'draught', pDisp:'displacement', pGM:'GM (corrected)', pKxx:'roll radius of gyration', pTn:'heave / roll natural period',
     heliMethodTitle:'Helideck probability (preliminary)',
-    heliMethod:'For each 6-hour step the most probable 20-minute maxima of pitch, roll (plus the static trim of 0.57° and list of 0.3° that the HMS reads; helideck roll scaled to the HMS records) and the NORMAM-27 heave rate VArf (largest vertical oscillation of the helideck centre divided by half its period) are computed from the response spectra. The probability that each stays within its limit follows the Rayleigh distribution of maxima, P = exp(−N·exp(−L²/2σ²)), integrated over the model\'s own uncertainty (log-normal, from the MRU validation). "Green" is the joint probability for pitch, roll, inclination and heave rate, for the day or night limits that apply at that hour.',
+    heliMethod:'For each 3-hour step the most probable 20-minute maxima of pitch, roll (plus the static trim of 0.57° and list of 0.3° that the HMS reads) and the NORMAM-27 heave rate are computed from the response spectra. Each is compared with its NORMAM-27 day limit using the spread between model and HMS measured over one month of HMS records (18 Sep–18 Oct 2026). The deck is only as green as its weakest limit, so the probability shown is the lowest of pitch, roll, inclination and heave rate. It is the chance that the deck is green in the 20 minutes before a landing at that time, not that it stays green for the whole step.',
     valTitle:'Validation against the rig MRU',
     valText:'411 forecast steps from 71 DTN issues (1 Sep – 17 Oct 2026, same location 22.59 S 40.23 W; 174 distinct MRU windows) were compared with the MRU heave, pitch and roll sampled every 5.6 min, using the measured heading. The MRU statistic is the standard deviation in a ±3 h window; the model adds a measured baseline (sensor/slow-heel floor) in quadrature.',
     valHead:['Motion','Correlation','Within ±30 %','Within ±50 %','Bias, top 25 % events','Baseline'],
@@ -707,7 +711,7 @@ const PBS = (function () {
     modelText:'Heave e pitch usam as expressões fechadas de Jensen, Mansour & Pedersen (2004, <i>Ocean Engineering</i> 31) para um casco tipo caixa com o mesmo comprimento, boca e calado, corrigidas pelos coeficientes de bloco e de linha d\'água, com razão efetiva de massa adicional seccional de 0,8. O roll é uma resposta linear de um grau de liberdade com excitação por declividade efetiva da onda, raio de giração da distribuição de pesos da estabilidade e razão de amortecimento linear equivalente de 0,22 ajustada ao registro do MRU. Cada linha da previsão vira três partições de mar (mar de vento, swell primário e secundário) com espectros JONSWAP (fator de pico da DNV-RP-C205) e espalhamento direcional cos²; as estatísticas vêm do espectro de resposta (significativo = 2σ, máximo mais provável = σ√(2 ln N)).',
     pLBP:'LBP × boca', pDraft:'calado', pDisp:'deslocamento', pGM:'GM (corrigido)', pKxx:'raio de giração em roll', pTn:'período natural heave / roll',
     heliMethodTitle:'Probabilidade do heliponto (preliminar)',
-    heliMethod:'Para cada passo de 6 h calculam-se, a partir dos espectros de resposta, os máximos mais prováveis em 20 min de caturro, balanço (mais o trim estático de 0,57° e a banda de 0,3° lidos pelo HMS; balanço no heliponto ajustado aos registros do HMS) e a velocidade de arfagem VArf da NORMAM-27 (maior oscilação vertical do centro do helideque dividida por meio período). A probabilidade de cada um ficar dentro do limite segue a distribuição de Rayleigh dos máximos, P = exp(−N·exp(−L²/2σ²)), integrada sobre a incerteza do próprio modelo (log-normal, da validação com o MRU). "Verde" é a probabilidade conjunta para caturro, balanço, inclinação e VArf, com os limites de dia ou de noite que valem naquela hora.',
+    heliMethod:'Para cada passo de 3 horas calculam-se, a partir dos espectros de resposta, os máximos mais prováveis em 20 min de caturro, balanço (mais o trim estático de 0,57° e a banda de 0,3° lidos pelo HMS) e a velocidade de arfagem da NORMAM-27. Cada um é comparado ao seu limite diurno da NORMAM-27 usando a dispersão entre modelo e HMS medida em um mês de registros do HMS (18 set–18 out 2026). O heliponto só é tão verde quanto o seu limite mais fraco, então a probabilidade mostrada é a menor entre caturro, balanço, inclinação e arfagem. É a chance de o heliponto estar verde nos 20 minutos antes de um pouso naquele horário, e não de ficar verde durante todo o passo.',
     valTitle:'Validação contra o MRU da sonda',
     valText:'411 passos de previsão de 71 emissões da DTN (1 set – 17 out 2026, mesma posição 22,59 S 40,23 W; 174 janelas distintas do MRU) foram comparados com heave, pitch e roll do MRU amostrados a cada 5,6 min, usando o aproamento medido. A estatística do MRU é o desvio padrão numa janela de ±3 h; o modelo soma em quadratura um patamar medido (ruído do sensor / banda lenta).',
     valHead:['Movimento','Correlação','Dentro de ±30 %','Dentro de ±50 %','Viés, 25 % maiores eventos','Patamar'],
