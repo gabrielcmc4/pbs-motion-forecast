@@ -153,7 +153,7 @@ footer b{font-family:var(--display);text-transform:uppercase}
     <select id="lang" aria-label="Language"><option value="en">English</option><option value="pt">Português</option></select>
   </div>
 </div></header><div class="ybar"></div>
-<div class="hero"><div class="wrap"><div class="big">Petrobras 10000<span data-i18n="heroSub"></span></div><div class="yb" data-i18n="heroTag"></div></div></div>
+<div class="hero"><div class="wrap"><div class="big">Petrobras 10000<span id="heroSub"></span></div><div class="yb" data-i18n="heroTag"></div></div></div>
 
 <main><div class="wrap">
 
@@ -605,7 +605,7 @@ const PBS = (function () {
   const I18N={
   en:{
     subtitle:'Petrobras 10000 · heave, pitch, roll and helideck status from the DTN Marine Daily Planner',
-    valLink:'Curious if this forecast is accurate? Gabriel also was, but watch this ↗', heroSub:'Campos Basin · 22.59 S 40.23 W · dynamic positioning', heroTag:'Motion & helideck forecast', version:'Workover configuration · model v1.3.1 · validated 18 Oct 2026',
+    valLink:'Curious if this forecast is accurate? Gabriel also was, but watch this ↗', heroSub:(b,p)=>(b?b+' Basin · ':'')+p+' · dynamic positioning', heroTag:'Motion & helideck forecast', version:'Workover configuration · model v1.3.1 · validated 18 Oct 2026',
     s1:'1 · Forecast input', upload:'Upload the DTN forecast (PDF or the .eml e-mail)',
     fileHint:'Or paste the Daily Planner text. A sample forecast (17 Oct 2026, 12:00) is loaded so you can see how it works.',
     cond:'Rig condition', condA:'Workover · TRT connected', condB:'Workover · assembly disconnected',
@@ -666,7 +666,7 @@ const PBS = (function () {
   },
   pt:{
     subtitle:'Petrobras 10000 · heave, pitch, roll e status do heliponto a partir do DTN Marine Daily Planner',
-    valLink:'Curioso se essa previsão é precisa? O Gabriel também era, mas veja isto ↗', heroSub:'Bacia de Campos · 22,59 S 40,23 W · posicionamento dinâmico', heroTag:'Previsão de movimentos e heliponto', version:'Configuração de workover · modelo v1.3.1 · validado 18 out 2026',
+    valLink:'Curioso se essa previsão é precisa? O Gabriel também era, mas veja isto ↗', heroSub:(b,p)=>(b?'Bacia '+(b==='Espírito Santo'?'do ':'de ')+b+' · ':'')+p.replace(/\./g,',')+' · posicionamento dinâmico', heroTag:'Previsão de movimentos e heliponto', version:'Configuração de workover · modelo v1.3.1 · validado 18 out 2026',
     s1:'1 · Entrada da previsão', upload:'Carregue a previsão DTN (PDF ou o e-mail .eml)',
     fileHint:'Ou cole o texto do Daily Planner. Uma previsão de exemplo (17 out 2026, 12:00) já está carregada para mostrar como funciona.',
     cond:'Condição da sonda', condA:'Workover · TRT conectada', condB:'Workover · conjunto desconectado',
@@ -734,7 +734,17 @@ const PBS = (function () {
     const tn=PBS.naturalPeriods(PBS.makeShip('connected'));
     $('particulars').innerHTML=`<div><b>219.4 × 42.0 m</b><span>${t('pLBP')}</span></div><div><b>10.8 m</b><span>${t('pDraft')}</span></div><div><b>86,060 t</b><span>${t('pDisp')}</span></div><div><b>5.84 m</b><span>${t('pGM')}</span></div><div><b>16.2 m</b><span>${t('pKxx')}</span></div><div><b>${tn.heave.toFixed(1)} / ${tn.roll.toFixed(1)} s</b><span>${t('pTn')}</span></div>`;
     $('valtbl').innerHTML='<tr>'+t('valHead').map((h,i)=>`<th${i?'':' class="l"'}>${h}</th>`).join('')+'</tr>'+t('valRows').map(r=>'<tr>'+r.map((c,i)=>`<td${i?'':' class="l"'}>${c}</td>`).join('')+'</tr>').join('');
+    renderHero();
     if(RESULTS){ renderSummary(); renderDetail(); }
+  }
+  // Basin from the DTN position (DTN gives coordinates only). Latitude bands off south-east Brazil; elsewhere coordinates only.
+  function basinOf(lat,lon){
+    if(lat==null||lon==null||lon<-50||lon>-37||lat<-34||lat>-18) return null;
+    return lat<-28.5?'Pelotas':lat<-23.0?'Santos':lat<-21.6?'Campos':'Espírito Santo';
+  }
+  function renderHero(){
+    const p=(typeof FC!=='undefined'&&FC&&FC.position)?FC.position:{lat:-22.59,lon:-40.23,text:'22.59 S 40.23 W'};
+    $('heroSub').textContent=t('heroSub')(basinOf(p.lat,p.lon),p.text);
   }
   $('lang').addEventListener('change',e=>{ LANG=e.target.value; try{localStorage.setItem('pbs-lang',LANG);}catch(_){ } applyLang(); });
   try{ const l=localStorage.getItem('pbs-lang'); if(l==='pt'||l==='en'){ LANG=l; $('lang').value=l; } }catch(_){ }
@@ -830,6 +840,7 @@ const PBS = (function () {
   function renderSummary(){
     const {scen,rows,missing}=RESULTS; const hsMax=Math.max(...rows.map(r=>r.hs_total));
     setStatus($('runStatus'),`${t('stSteps')(rows.length,missing)} · ${FC.issued?t('stIssued')+' '+fmtDT(FC.issued):''} · ${$('cond').options[$('cond').selectedIndex].text}`);
+    renderHero();
     $('meta').innerHTML=`<div><b>${FC.issued?fmtDT(FC.issued):'—'}</b><span>${t('issued')}</span></div><div><b>${FC.position?FC.position.text:'—'}</b><span>${t('position')}</span></div><div><b>${fmtDate(rows[0].valid)} → ${fmtDate(rows[rows.length-1].valid)}</b><span>${t('valid')}</span></div><div><b>${hsMax.toFixed(1)} m</b><span>${t('maxHs')}</span></div>`;
     // helideck strip
     const n=rows.length; const cols=`repeat(${n},minmax(0,1fr))`;
