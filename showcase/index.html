@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Rig Motion Forecast</title>
+<meta name="description" content="Rig motion and helideck forecast from the weather forecast the rig already receives, validated against the rig's own MRU and HMS records.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+:root{--bg:#F5F7F9;--panel:#FFFFFF;--fg:#14212B;--muted:#56656F;--line:#DCE3E8;--navy:#0E2233;--navy2:#123049;--sea:#0F6E8C;--accent:#1FB5A9;--good:#2E8B57;--goodbg:#E3F4EA;--warn:#8A5A00;--warnbg:#FFF1CF;--bad:#A3271B;--badbg:#FBE0DC;--sans:'IBM Plex Sans',system-ui,-apple-system,Segoe UI,Arial,sans-serif;--mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0B141B;--panel:#111E28;--fg:#E5ECF1;--muted:#9AABB7;--line:#22323E;--goodbg:#173323;--good:#8FD9A8;--warnbg:#3D2F0A;--warn:#F2CF7A;--badbg:#3E1712;--bad:#F3A79D;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0B141B;--panel:#111E28;--fg:#E5ECF1;--muted:#9AABB7;--line:#22323E;--goodbg:#173323;--good:#8FD9A8;--warnbg:#3D2F0A;--warn:#F2CF7A;--badbg:#3E1712;--bad:#F3A79D;color-scheme:dark}
+[data-lang="pt"] .lang-en{display:none!important} :root:not([data-lang="pt"]) .lang-pt{display:none!important}
+*{box-sizing:border-box} html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:16px;line-height:1.6}
+a{color:var(--sea)} img{max-width:100%;height:auto;display:block}
+.wrap{max-width:1120px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-left,0px))}
+header.top{background:var(--navy);color:#fff;position:sticky;top:0;z-index:5;border-bottom:1px solid rgba(255,255,255,.08)}
+header.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:12px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.02em}
+.brand svg{width:26px;height:26px;stroke:var(--accent);fill:none;stroke-width:2}
+.brand small{font-weight:400;opacity:.75;letter-spacing:0}
+nav{display:flex;align-items:center;gap:18px;font-size:14px} nav a{color:#cfe3ec;text-decoration:none} nav a:hover{color:#fff}
+#lang{font:inherit;font-size:13px;color:#fff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.4);padding:5px 8px;border-radius:4px} #lang option{color:#14212B;background:#fff}
+.hero{background:linear-gradient(160deg,var(--navy) 0%,var(--navy2) 55%,#0F4A63 100%);color:#fff;padding:64px 0 56px}
+.hero h1{font-size:clamp(30px,4.6vw,50px);line-height:1.1;margin:0 0 16px;letter-spacing:-.02em;max-width:20ch}
+.hero p.lead{font-size:clamp(17px,2vw,20px);color:#cfe3ec;max-width:60ch;margin:0 0 30px}
+.eyebrow{font-family:var(--mono);font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.12);border-radius:8px;overflow:hidden}
+.kpi{background:rgba(14,34,51,.65);padding:18px 18px 16px} .kpi b{display:block;font-family:var(--mono);font-size:clamp(24px,3vw,32px);font-weight:600;color:#fff} .kpi span{font-size:13.5px;color:#b9d1dc;line-height:1.4;display:block;margin-top:4px}
+.case{margin-top:16px;font-size:13.5px;color:#9fbccb}
+section.block{padding:56px 0} section.block+section.block{border-top:1px solid var(--line)}
+h2{font-size:clamp(24px,3vw,32px);line-height:1.2;margin:0 0 10px;letter-spacing:-.01em}
+.sub{color:var(--muted);max-width:68ch;margin:0 0 28px}
+.feats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.feat{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:20px}
+.feat .ic svg{width:30px;height:30px;stroke:var(--sea);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.feat h3{font-size:17px;margin:10px 0 6px} .feat,.step,.kpi{overflow-wrap:break-word;min-width:0} .feat p{margin:0;color:var(--muted);font-size:15px}
+figure{margin:0 0 26px;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+figure .shot{width:100%} figure .scroll{overflow-x:auto} figure .scroll img{max-width:none;width:1830px}
+figcaption{padding:12px 16px;font-size:14px;color:var(--muted);border-top:1px solid var(--line)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px} .two figure{margin:0}
+.tbl{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:8px;margin:0 0 14px}
+table{border-collapse:collapse;width:100%;font-size:14.5px;font-variant-numeric:tabular-nums}
+th,td{padding:10px 12px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap} th:first-child,td:first-child{text-align:left;white-space:normal}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;white-space:normal} tr:last-child td{border-bottom:0}
+td.num{font-family:var(--mono)}
+.tag{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600;white-space:nowrap} .ok{background:var(--goodbg);color:var(--good)} .ind{background:var(--warnbg);color:var(--warn)}
+.note{font-size:14.5px;color:var(--muted);max-width:75ch;margin:0 0 28px}
+h3.sec{font-size:19px;margin:34px 0 12px}
+.honest{background:var(--panel);border:1px solid var(--line);border-left:4px solid #E0A526;border-radius:8px;padding:20px 22px}
+.honest ul{margin:8px 0 0;padding-left:20px} .honest li{margin:6px 0}
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;counter-reset:s}
+.step{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:20px;position:relative}
+.step::before{counter-increment:s;content:counter(s);font-family:var(--mono);font-weight:600;color:var(--accent);font-size:22px}
+.step h3{font-size:17px;margin:6px 0} .step p{margin:0;color:var(--muted);font-size:15px}
+.cta{margin-top:28px;background:var(--navy);color:#fff;border-radius:8px;padding:26px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.cta p{margin:0;font-size:18px;max-width:60ch}
+footer{padding:28px 0 40px;font-size:13.5px;color:var(--muted)}
+@media (max-width:860px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))} .feats,.steps{grid-template-columns:1fr 1fr} .two{grid-template-columns:1fr} nav a{display:none}}
+@media (max-width:560px){.brand small{display:none} .feats,.steps{grid-template-columns:1fr} .hero{padding:40px 0 36px} section.block{padding:40px 0}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+<div class="brand"><svg viewBox="0 0 24 24"><path d="M2 16c2.5 0 2.5-3 5-3s2.5 3 5 3 2.5-3 5-3 2.5 3 5 3"/><path d="M7 13V7h7v6M10 7V3"/></svg>Rig Motion Forecast <small>· <span class="lang-en">by Gabriel Cunha</span><span class="lang-pt">por Gabriel Cunha</span></small></div>
+<nav><a href="#features"><span class="lang-en">What it does</span><span class="lang-pt">O que faz</span></a><a href="#results"><span class="lang-en">Results</span><span class="lang-pt">Resultados</span></a><a href="#your-rig"><span class="lang-en">Your rig</span><span class="lang-pt">Sua sonda</span></a>
+<select id="lang" aria-label="Language / Idioma"><option value="en">English</option><option value="pt">Português</option></select></nav>
+</div></header>
+
+<section class="hero"><div class="wrap">
+<div class="eyebrow"><span class="lang-en">Drillships and semisubmersibles on DP</span><span class="lang-pt">Navios-sonda e semissubmersíveis em DP</span></div>
+<h1><span class="lang-en">Know how your rig will move before the weather arrives.</span><span class="lang-pt">Saiba como sua sonda vai se mover antes do tempo chegar.</span></h1>
+<p class="lead"><span class="lang-en">The weather forecast your rig already receives, turned into heave, drill-floor, pitch and roll for every step, the best heading to hold, and the chance of a green helideck. Calibrated and tested against your rig&#39;s own motion and helideck records.</span><span class="lang-pt">A previsão do tempo que a sua sonda já recebe, transformada em heave, movimento no drill floor, pitch e roll para cada passo, o melhor aproamento a manter e a chance de heliponto verde. Calibrada e testada contra os registros de movimento e de heliponto da própria sonda.</span></p>
+<div class="kpis">
+<div class="kpi"><b><span class="lang-en">90 %</span><span class="lang-pt">90 %</span></b><span><span class="lang-en">of heave and pitch predictions within ±30 % in rough seas, on data the model had never seen</span><span class="lang-pt">das previsões de heave e pitch dentro de ±30 % em mar agitado, em dados que o modelo nunca tinha visto</span></span></div>
+<div class="kpi"><b><span class="lang-en">0.90 / 0.96</span><span class="lang-pt">0,90 / 0,96</span></b><span><span class="lang-en">correlation of predicted vs measured maximum heave / pitch (blind test)</span><span class="lang-pt">correlação entre máximo previsto e medido de heave / pitch (teste cego)</span></span></div>
+<div class="kpi"><b><span class="lang-en">2.8 pts</span><span class="lang-pt">2,8 pts</span></b><span><span class="lang-en">mean gap between predicted and actual helideck green time, one month of HMS records</span><span class="lang-pt">diferença média entre tempo verde previsto e real do heliponto, um mês de registros do HMS</span></span></div>
+<div class="kpi"><b><span class="lang-en">0</span><span class="lang-pt">0</span></b><span><span class="lang-en">helideck false-red calls in that month, AW139 and S-92 limits</span><span class="lang-pt">falsos vermelhos do heliponto nesse mês, limites do AW139 e do S-92</span></span></div>
+</div>
+<div class="case"><span class="lang-en">Case study: drillship Petrobras 10000, offshore Brazil, Aug – Oct 2026. 776 forecast steps compared with the rig MRU; 720 hours of HMS records.</span><span class="lang-pt">Estudo de caso: navio-sonda Petrobras 10000, costa do Brasil, ago – out 2026. 776 passos de previsão comparados com o MRU da sonda; 720 horas de registros do HMS.</span></div>
+</div></section>
+
+<main>
+<section class="block" id="features"><div class="wrap">
+<h2 class="lang-en">What the rig team gets</h2><h2 class="lang-pt">O que a equipe da sonda recebe</h2>
+<p class="sub lang-en">A single web page your rig team opens in any browser. Load the latest forecast and the results appear in seconds.</p><p class="sub lang-pt">Uma única página web que a equipe abre em qualquer navegador. Carregue a previsão mais recente e os resultados aparecem em segundos.</p>
+<div class="feats">
+<div class="feat"><div class="ic"><svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg></div><h3 class="lang-en">Uses the forecast you already get</h3><h3 class="lang-pt">Usa a previsão que você já recebe</h3><p class="lang-en">Drop in the DTN Marine Daily Planner, as the PDF or the e-mail itself. No new weather service, no data entry.</p><p class="lang-pt">Solte o DTN Marine Daily Planner, em PDF ou o próprio e-mail. Sem novo serviço de meteorologia, sem digitação.</p></div>
+<div class="feat"><div class="ic"><svg viewBox="0 0 24 24"><path d="M2 15c2.5 0 2.5-3 5-3s2.5 3 5 3 2.5-3 5-3 2.5 3 5 3"/><path d="M12 3v7M9 6l3-3 3 3"/></svg></div><h3 class="lang-en">Motions for every forecast step</h3><h3 class="lang-pt">Movimentos para cada passo da previsão</h3><p class="lang-en">Heave at the MRU and at the drill floor, pitch and roll, as significant values and 3-hour maxima, colour-coded against reference levels.</p><p class="lang-pt">Heave no MRU e no drill floor, pitch e roll, como valores significativos e máximos em 3 horas, com cores por níveis de referência.</p></div>
+<div class="feat"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg></div><h3 class="lang-en">Best heading and scenarios</h3><h3 class="lang-pt">Melhor aproamento e cenários</h3><p class="lang-en">The heading with the lowest worst-case motion, compared with bow to the dominant swell and bow to the wind, or the heading your DPO plans to hold.</p><p class="lang-pt">O aproamento com o menor movimento no pior caso, comparado com proa para o swell dominante e proa para o vento, ou o aproamento que o DPO pretende manter.</p></div>
+<div class="feat"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 8v8M15 8v8M9 12h6"/></svg></div><h3 class="lang-en">Helideck status light</h3><h3 class="lang-pt">Luz de status do heliponto</h3><p class="lang-en">NORMAM-27 limits for AW139 and S-92: the most likely outcome, green or red, with its probability for each step.</p><p class="lang-pt">Limites da NORMAM-27 para AW139 e S-92: o resultado mais provável, verde ou vermelho, com sua probabilidade para cada passo.</p></div>
+<div class="feat"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 15h18l-3 4H6z"/><path d="M7 15V9h6v6M10 9V4"/></svg></div><h3 class="lang-en">A picture the whole crew understands</h3><h3 class="lang-pt">Uma imagem que toda a equipe entende</h3><p class="lang-en">Animated rig and heading envelope for planning meetings and toolbox talks, in English or Portuguese.</p><p class="lang-pt">Sonda animada e envelope por aproamento para reuniões de planejamento e DDS, em inglês ou português.</p></div>
+<div class="feat"><div class="ic"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="1"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div><h3 class="lang-en">Nothing to install</h3><h3 class="lang-pt">Nada para instalar</h3><p class="lang-en">Runs entirely in the browser. The forecast you load is processed on your own computer and is not sent anywhere.</p><p class="lang-pt">Roda inteiramente no navegador. A previsão carregada é processada no seu próprio computador e não é enviada para lugar nenhum.</p></div>
+</div>
+</div></section>
+
+<section class="block"><div class="wrap">
+<h2 class="lang-en">The page, as the rig team sees it</h2><h2 class="lang-pt">A página, como a equipe da sonda vê</h2>
+<p class="sub lang-en">Screens from the Petrobras 10000 page with the forecast issued on 18 Oct 2026.</p><p class="sub lang-pt">Telas da página do Petrobras 10000 com a previsão emitida em 18 out 2026.</p>
+<figure><img class="shot lang-en" src="img/calc_summary_en.jpg" alt="Heading scenario cards: best heading, bow to dominant swell, bow to wind" loading="lazy"><img class="shot lang-pt" src="img/calc_summary_pt.jpg" alt="Cartões de cenários de aproamento: melhor aproamento, proa para o swell, proa para o vento" loading="lazy"><figcaption><span class="lang-en">Heading scenarios: the worst step of the forecast for each heading, at a glance.</span><span class="lang-pt">Cenários de aproamento: o pior passo da previsão para cada aproamento, num relance.</span></figcaption></figure>
+<figure><img class="shot lang-en" src="img/calc_anim_en.jpg" alt="Heading envelope and animated rig with the helideck status light" loading="lazy"><img class="shot lang-pt" src="img/calc_anim_pt.jpg" alt="Envelope por aproamento e sonda animada com a luz de status do heliponto" loading="lazy"><figcaption><span class="lang-en">Drill-floor motion for every heading, and the rig moving with the forecast motion, helideck light included.</span><span class="lang-pt">Movimento do drill floor para todos os aproamentos e a sonda se movendo com o movimento previsto, com a luz do heliponto.</span></figcaption></figure>
+<figure><img class="shot lang-en" src="img/calc_ts_en.jpg" alt="Forecast motions over the next days" loading="lazy"><img class="shot lang-pt" src="img/calc_ts_pt.jpg" alt="Movimentos previstos para os próximos dias" loading="lazy"><figcaption><span class="lang-en">Motions over the whole forecast period, for the three heading scenarios.</span><span class="lang-pt">Movimentos ao longo de todo o período da previsão, para os três cenários de aproamento.</span></figcaption></figure>
+<figure><div class="scroll"><img class="shot lang-en" src="img/calc_table_en.jpg" alt="Step-by-step table of motions and helideck status" loading="lazy"><img class="shot lang-pt" src="img/calc_table_pt.jpg" alt="Tabela passo a passo de movimentos e status do heliponto" loading="lazy"></div><figcaption><span class="lang-en">Step-by-step table, down to the helideck call on the right (scroll sideways on smaller screens).</span><span class="lang-pt">Tabela passo a passo, até a indicação do heliponto à direita (role para o lado em telas menores).</span></figcaption></figure>
+</div></section>
+
+<section class="block" id="results"><div class="wrap">
+<h2 class="lang-en">Tested against what the rig actually measured</h2><h2 class="lang-pt">Testado contra o que a sonda realmente mediu</h2>
+<p class="sub lang-en">Every number below compares the forecast-driven prediction with the rig&#39;s own sensors over the same hours: the motion reference unit (MRU) for heave, pitch and roll, and the helideck monitoring system (HMS) for the helideck.</p><p class="sub lang-pt">Cada número abaixo compara a previsão gerada a partir da previsão do tempo com os sensores da própria sonda nas mesmas horas: a unidade de referência de movimento (MRU) para heave, pitch e roll, e o sistema de monitoramento do heliponto (HMS) para o heliponto.</p>
+<figure><img class="shot lang-en" src="img/mru_en.png" alt="Predicted vs measured maximum heave, pitch and roll, 11 Aug to 17 Oct 2026" loading="lazy"><img class="shot lang-pt" src="img/mru_pt.png" alt="Máximos previstos vs medidos de heave, pitch e roll, 11 ago a 17 out 2026" loading="lazy"><figcaption><span class="lang-en">Predicted (line) and measured (dots) most probable 3-hour maximum, 11 Aug – 17 Oct 2026. The red band is the blind test: a period the model had never seen, with the swell from every side of the rig. Right: predicted vs measured, perfect agreement on the yellow line, ±30 % dotted.</span><span class="lang-pt">Máximo mais provável em 3 horas previsto (linha) e medido (pontos), 11 ago – 17 out 2026. A faixa vermelha é o teste cego: um período que o modelo nunca tinha visto, com swell de todos os lados da sonda. Direita: previsto vs medido, concordância perfeita sobre a linha amarela, ±30 % pontilhado.</span></figcaption></figure>
+
+<h3 class="sec lang-en">Blind test: 11–28 Aug 2026, 365 forecast steps, Hs up to 4.0 m</h3><h3 class="sec lang-pt">Teste cego: 11–28 ago 2026, 365 passos de previsão, Hs até 4,0 m</h3>
+<div class="tbl"><table>
+<tr><th><span class="lang-en">Motion</span><span class="lang-pt">Movimento</span></th><th><span class="lang-en">Correlation</span><span class="lang-pt">Correlação</span></th><th><span class="lang-en">Bias</span><span class="lang-pt">Viés</span></th><th><span class="lang-en">Within ±30 %</span><span class="lang-pt">Dentro de ±30 %</span></th><th><span class="lang-en">Within ±30 %, rough seas</span><span class="lang-pt">Dentro de ±30 %, mar agitado</span></th><th><span class="lang-en">Largest value, measured / predicted</span><span class="lang-pt">Maior valor, medido / previsto</span></th><th><span class="lang-en">Verdict</span><span class="lang-pt">Veredito</span></th></tr>
+<tr><td><span class="lang-en">Heave max, peak-to-peak</span><span class="lang-pt">Heave máx., pico a pico</span></td><td class="num"><span class="lang-en">0.90</span><span class="lang-pt">0,90</span></td><td class="num">+2 %</td><td class="num">83 %</td><td class="num">90 %</td><td class="num"><span class="lang-en">4.5 / 5.3 m</span><span class="lang-pt">4,5 / 5,3 m</span></td><td><span class="tag ok"><span class="lang-en">validated</span><span class="lang-pt">validado</span></span></td></tr>
+<tr><td><span class="lang-en">Pitch max</span><span class="lang-pt">Pitch máx.</span></td><td class="num"><span class="lang-en">0.96</span><span class="lang-pt">0,96</span></td><td class="num">+10 %</td><td class="num">77 %</td><td class="num">90 %</td><td class="num"><span class="lang-en">2.2 / 2.2°</span><span class="lang-pt">2,2 / 2,2°</span></td><td><span class="tag ok"><span class="lang-en">validated</span><span class="lang-pt">validado</span></span></td></tr>
+<tr><td><span class="lang-en">Roll max</span><span class="lang-pt">Roll máx.</span></td><td class="num"><span class="lang-en">0.73</span><span class="lang-pt">0,73</span></td><td class="num">+13 %</td><td class="num">58 %</td><td class="num">51 %</td><td class="num"><span class="lang-en">3.0 / 3.0°</span><span class="lang-pt">3,0 / 3,0°</span></td><td><span class="tag ind"><span class="lang-en">indicative only</span><span class="lang-pt">apenas indicativo</span></span></td></tr>
+</table></div>
+<p class="note lang-en">The model was frozen before this period and run on it unchanged. Rough seas: measured heave above about 1.9 m peak-to-peak (249 steps). A positive bias means the prediction is slightly on the safe side.</p><p class="note lang-pt">O modelo foi congelado antes deste período e rodado nele sem alterações. Mar agitado: heave medido acima de cerca de 1,9 m pico a pico (249 passos). Viés positivo significa que a previsão fica levemente a favor da segurança.</p>
+
+<h3 class="sec lang-en">Largest real waves, sampled every 0.45 s (25 Aug 2026)</h3><h3 class="sec lang-pt">Maiores ondas reais, amostradas a cada 0,45 s (25 ago 2026)</h3>
+<div class="tbl"><table>
+<tr><th><span class="lang-en">Window</span><span class="lang-pt">Janela</span></th><th><span class="lang-en">Largest heave wave, peak-to-peak: predicted / measured</span><span class="lang-pt">Maior onda de heave, pico a pico: prevista / medida</span></th><th><span class="lang-en">Significant heave: predicted / measured</span><span class="lang-pt">Heave significativo: previsto / medido</span></th></tr>
+<tr><td><span class="lang-en">16:44–18:18, heading 170°</span><span class="lang-pt">16:44–18:18, aproamento 170°</span></td><td class="num"><span class="lang-en">3.47 / 3.19 m</span><span class="lang-pt">3,47 / 3,19 m</span></td><td class="num"><span class="lang-en">2.00 / 1.81 m</span><span class="lang-pt">2,00 / 1,81 m</span></td></tr>
+<tr><td><span class="lang-en">19:46–21:19, heading 150°</span><span class="lang-pt">19:46–21:19, aproamento 150°</span></td><td class="num"><span class="lang-en">3.93 / 3.49 m</span><span class="lang-pt">3,93 / 3,49 m</span></td><td class="num"><span class="lang-en">2.24 / 2.07 m</span><span class="lang-pt">2,24 / 2,07 m</span></td></tr>
+</table></div>
+<p class="note lang-en">Checked wave by wave (418 and 442 waves): the predicted largest wave was 9–13 % above the real one, slightly on the safe side.</p><p class="note lang-pt">Verificado onda a onda (418 e 442 ondas): a maior onda prevista ficou 9–13 % acima da real, levemente a favor da segurança.</p>
+
+<h3 class="sec lang-en">Month held out, both ways</h3><h3 class="sec lang-pt">Mês deixado de fora, nos dois sentidos</h3>
+<div class="tbl"><table>
+<tr><th><span class="lang-en">Motion</span><span class="lang-pt">Movimento</span></th><th><span class="lang-en">Fit on Sep, test on Oct: correlation / within ±30 %</span><span class="lang-pt">Ajuste em set, teste em out: correlação / dentro de ±30 %</span></th><th><span class="lang-en">Fit on Oct, test on Sep: correlation / within ±30 %</span><span class="lang-pt">Ajuste em out, teste em set: correlação / dentro de ±30 %</span></th><th><span class="lang-en">Verdict</span><span class="lang-pt">Veredito</span></th></tr>
+<tr><td>Heave</td><td class="num"><span class="lang-en">0.79 / 57 %</span><span class="lang-pt">0,79 / 57 %</span></td><td class="num"><span class="lang-en">0.85 / 79 %</span><span class="lang-pt">0,85 / 79 %</span></td><td><span class="tag ok"><span class="lang-en">good</span><span class="lang-pt">bom</span></span></td></tr>
+<tr><td>Pitch</td><td class="num"><span class="lang-en">0.77 / 89 %</span><span class="lang-pt">0,77 / 89 %</span></td><td class="num"><span class="lang-en">0.82 / 59 %</span><span class="lang-pt">0,82 / 59 %</span></td><td><span class="tag ok"><span class="lang-en">good</span><span class="lang-pt">bom</span></span></td></tr>
+<tr><td>Roll</td><td class="num"><span class="lang-en">0.16 / 69 %</span><span class="lang-pt">0,16 / 69 %</span></td><td class="num"><span class="lang-en">0.49 / 27 %</span><span class="lang-pt">0,49 / 27 %</span></td><td><span class="tag ind"><span class="lang-en">indicative only</span><span class="lang-pt">apenas indicativo</span></span></td></tr>
+</table></div>
+<p class="note lang-en">For reference, the forecast wave height alone correlates only 0.37 with the measured heave on the same data: the skill comes from turning the sea state into rig motion, not from the forecast height.</p><p class="note lang-pt">Como referência, a altura de onda da previsão sozinha tem correlação de apenas 0,37 com o heave medido nos mesmos dados: a habilidade vem de transformar o estado de mar em movimento da sonda, não da altura prevista.</p>
+
+<h3 class="sec lang-en">Helideck vs the HMS: 18 Sep – 18 Oct 2026</h3><h3 class="sec lang-pt">Heliponto vs HMS: 18 set – 18 out 2026</h3>
+<figure><img class="shot lang-en" src="img/heli_en.png" alt="Predicted helideck green probability vs HMS time green, and predicted vs HMS heave rate" loading="lazy"><img class="shot lang-pt" src="img/heli_pt.png" alt="Probabilidade de verde prevista vs tempo verde no HMS, e arfagem prevista vs HMS" loading="lazy"><figcaption><span class="lang-en">Each week was predicted with settings fitted only on the other weeks. Top rows: share of each 3-hour step the HMS showed green (dots) and the predicted probability of a green deck (line), AW139 and S-92 limits. Bottom: helideck heave rate, which caused every red period of the month. 28 Sep – 6 Oct has no forecasts in the archive.</span><span class="lang-pt">Cada semana foi prevista com ajustes feitos só nas outras semanas. Linhas de cima: fração de cada passo de 3 horas em que o HMS mostrou verde (pontos) e a probabilidade prevista de heliponto verde (linha), limites do AW139 e do S-92. Embaixo: velocidade de arfagem no heliponto, que causou todos os períodos vermelhos do mês. 28 set – 6 out não tem previsões no arquivo.</span></figcaption></figure>
+<div class="tbl"><table>
+<tr><th><span class="lang-en">Aircraft limits (NORMAM-27, day)</span><span class="lang-pt">Limites da aeronave (NORMAM-27, dia)</span></th><th><span class="lang-en">Steps</span><span class="lang-pt">Passos</span></th><th><span class="lang-en">Mean gap, predicted vs actual green time</span><span class="lang-pt">Diferença média, tempo verde previsto vs real</span></th><th><span class="lang-en">Within ±10 points</span><span class="lang-pt">Dentro de ±10 pontos</span></th><th><span class="lang-en">False red calls</span><span class="lang-pt">Falsos vermelhos</span></th><th><span class="lang-en">Verdict</span><span class="lang-pt">Veredito</span></th></tr>
+<tr><td>AW139, Cat. B</td><td class="num">120</td><td class="num"><span class="lang-en">2.8 points</span><span class="lang-pt">2,8 pontos</span></td><td class="num">90 %</td><td class="num">0</td><td><span class="tag ok"><span class="lang-en">validated in this range</span><span class="lang-pt">validado nesta faixa</span></span></td></tr>
+<tr><td>S-92, Cat. A</td><td class="num">120</td><td class="num"><span class="lang-en">2.6 points</span><span class="lang-pt">2,6 pontos</span></td><td class="num">91 %</td><td class="num">0</td><td><span class="tag ok"><span class="lang-en">validated in this range</span><span class="lang-pt">validado nesta faixa</span></span></td></tr>
+</table></div>
+<p class="note lang-en">Predicted vs HMS helideck heave rate: correlation 0.84, median ratio 1.02.</p><p class="note lang-pt">Arfagem do heliponto prevista vs HMS: correlação 0,84, razão mediana 1,02.</p>
+
+<div class="honest">
+<h3 class="lang-en">What it does not do (yet)</h3><h3 class="lang-pt">O que ainda não faz</h3>
+<ul>
+<li><span class="lang-en"><b>Roll is indicative only.</b> Roll was tracked less well than heave and pitch (blind-test correlation 0.73, 0.16–0.49 with a month held out), so the page labels it as indicative.</span><span class="lang-pt"><b>O roll é apenas indicativo.</b> O roll foi acompanhado com menos precisão que heave e pitch (correlação 0,73 no teste cego, 0,16–0,49 com um mês deixado de fora), por isso a página o marca como indicativo.</span></li>
+<li><span class="lang-en"><b>Pitch with the swell on the beam</b> runs about a third high, which is small in degrees (0.05° on average) and on the safe side.</span><span class="lang-pt"><b>Pitch com o swell de través</b> fica cerca de um terço alto, o que é pouco em graus (0,05° em média) e a favor da segurança.</span></li>
+<li><span class="lang-en"><b>Helideck red calls are not yet proven.</b> In the test month the deck was never mostly red in any 3-hour step; the roughest step was predicted at 51 % green against 80 % actual, so the tool leans slightly cautious.</span><span class="lang-pt"><b>As indicações de vermelho do heliponto ainda não estão comprovadas.</b> No mês de teste o heliponto nunca ficou majoritariamente vermelho em nenhum passo de 3 horas; o passo mais severo foi previsto com 51 % de verde contra 80 % real, então a ferramenta pende levemente para o lado conservador.</span></li>
+<li><span class="lang-en"><b>Validated range:</b> significant wave height 1.1–4.0 m and heave up to 4.5 m peak-to-peak (3-hour maximum), swell from every direction. Beyond that it has not been checked.</span><span class="lang-pt"><b>Faixa validada:</b> altura significativa de onda 1,1–4,0 m e heave até 4,5 m pico a pico (máximo em 3 horas), swell de todas as direções. Acima disso não foi verificado.</span></li>
+<li><span class="lang-en">It is a planning aid. It does not replace the HMS, the DP system or the judgement of the DPO and the aircraft commander.</span><span class="lang-pt">É uma ajuda ao planejamento. Não substitui o HMS, o sistema de DP nem o julgamento do DPO e do comandante da aeronave.</span></li>
+</ul></div>
+</div></section>
+
+<section class="block" id="your-rig"><div class="wrap">
+<h2 class="lang-en">A page for your rig</h2><h2 class="lang-pt">Uma página para a sua sonda</h2>
+<p class="sub lang-en">Each page is built for one rig and checked against that rig&#39;s own records before it is handed over, the same way the results above were produced.</p><p class="sub lang-pt">Cada página é feita para uma sonda e verificada contra os registros da própria sonda antes da entrega, da mesma forma que os resultados acima.</p>
+<div class="steps">
+<div class="step"><h3 class="lang-en">You share the records</h3><h3 class="lang-pt">Você compartilha os registros</h3><p class="lang-en">A few weeks of the forecasts you receive, your rig&#39;s motion and helideck logs for the same period, and the basic vessel documents.</p><p class="lang-pt">Algumas semanas das previsões que você recebe, os registros de movimento e do heliponto da sonda no mesmo período e os documentos básicos da embarcação.</p></div>
+<div class="step"><h3 class="lang-en">Your page is tuned and tested</h3><h3 class="lang-pt">Sua página é ajustada e testada</h3><p class="lang-en">The page is fitted to your rig and then tested on a period it has not seen. You get the results in a validation report like the one above.</p><p class="lang-pt">A página é ajustada à sua sonda e depois testada num período que ela não viu. Você recebe os resultados num relatório de validação como o acima.</p></div>
+<div class="step"><h3 class="lang-en">Your team uses it</h3><h3 class="lang-pt">Sua equipe usa</h3><p class="lang-en">A private link for your rig team, in English and Portuguese, with your forecast pre-loaded each week if you wish.</p><p class="lang-pt">Um link privado para a equipe da sonda, em inglês e português, com a sua previsão pré-carregada toda semana, se desejar.</p></div>
+</div>
+<div class="cta"><p class="lang-en">Interested in a page for your rig? Talk to Gabriel Cunha.</p><p class="lang-pt">Interessado numa página para a sua sonda? Fale com Gabriel Cunha.</p></div>
+</div></section>
+</main>
+<footer><div class="wrap"><span class="lang-en">© 2026 Gabriel Cunha · Results from the drillship Petrobras 10000, Aug – Oct 2026 · Planning aid only: it does not replace the HMS, the DP system or the judgement of the DPO and the aircraft commander.</span><span class="lang-pt">© 2026 Gabriel Cunha · Resultados do navio-sonda Petrobras 10000, ago – out 2026 · Apenas uma ajuda ao planejamento: não substitui o HMS, o sistema de DP nem o julgamento do DPO e do comandante da aeronave.</span></div></footer>
+<script>(function(){var sel=document.getElementById('lang'),L=(navigator.language||'').toLowerCase().indexOf('pt')===0?'pt':'en';
+try{var q=new URLSearchParams(location.search).get('lang'),l=q||localStorage.getItem('rmf-lang');if(l==='pt'||l==='en')L=l;}catch(e){}
+function set(l){var r=document.documentElement;r.setAttribute('data-lang',l);r.lang=(l==='pt'?'pt-BR':'en');sel.value=l;document.title=(l==='pt'?'Previsão de Movimentos da Sonda':'Rig Motion Forecast');}
+set(L);sel.addEventListener('change',function(){set(sel.value);try{localStorage.setItem('rmf-lang',sel.value);}catch(e){}});})();</script>
+</body>
+</html>
