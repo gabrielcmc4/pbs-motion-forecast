@@ -78,6 +78,20 @@ button{font-family:var(--display);text-transform:uppercase;letter-spacing:.04em;
 button:hover{background:var(--teal-deep)}
 button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.card:focus-visible{outline:3px solid var(--yellow);outline-offset:1px}
 button.secondary{background:transparent;color:var(--h2);border:2px solid var(--h2)}
+#txt{display:none}
+.inbar{display:flex;flex-wrap:wrap;gap:14px 26px;align-items:flex-end}
+.inbar .fld{min-width:0}
+.inbar .fld.up{flex:1 1 260px}
+.inbar .fld.up input[type=file]{width:100%}
+.inbar select{min-width:230px}
+.inbar .radio{align-items:center;min-height:38px}
+.inbar #hdg{width:74px;padding:6px 8px}
+.inbar #hdg:disabled{opacity:.45}
+.inbar .btns{display:flex;gap:10px;flex-wrap:wrap}
+#inputs .status{margin-top:10px}
+#inputs .status+.status{margin-top:2px}
+.rainc{display:block;font-size:10.5px;font-weight:600;letter-spacing:.02em;margin-top:2px;white-space:nowrap}
+.rainc.r0{color:var(--muted)} .rainc.r1{color:#1C6FA8} .rainc.r2{color:#0B3E73} .rainc .ts{color:#B5361F}
 .radio{display:flex;gap:16px;flex-wrap:wrap;font-size:14px}
 .radio label{display:inline-flex;gap:6px;align-items:center;text-transform:none;letter-spacing:0;font-weight:400;color:var(--fg);font-size:14px;margin:0}
 .status{font-size:13px;color:var(--muted);margin-top:8px;min-height:1.2em}
@@ -159,26 +173,20 @@ footer b{font-family:var(--display);text-transform:uppercase}
 
 <section class="panel" id="inputs">
   <h2 data-i18n="s1"></h2>
-  <div class="grid2">
-    <div>
-      <label for="file" data-i18n="upload"></label>
-      <input type="file" id="file" accept=".pdf,.eml,application/pdf,message/rfc822">
-      <div class="status" id="fileStatus"></div>
-      <div class="row" style="margin-top:12px">
-        <div><label for="cond" data-i18n="cond"></label>
-          <select id="cond"><option value="connected" data-i18n="condA"></option><option value="disconnected" data-i18n="condB"></option></select></div>
-        <div><label data-i18n="heading"></label>
-          <div class="radio"><label><input type="radio" name="hmode" value="auto" checked> <span data-i18n="hAuto"></span></label>
-          <label><input type="radio" name="hmode" value="fixed"> <span data-i18n="hFixed"></span></label></div></div>
-        <div><label for="hdg" data-i18n="hPlanned"></label><input type="number" id="hdg" min="0" max="359" step="1" value="20"></div>
-      </div>
-      <div class="row" style="margin-top:14px"><div style="flex:0 0 auto"><button id="run" data-i18n="calc"></button></div>
-        <div style="flex:0 0 auto"><button class="secondary" id="loadSample" data-i18n="reload"></button></div></div>
-      <div class="status" id="runStatus"></div>
-    </div>
-    <div>
-      <label for="txt" data-i18n="txtLabel"></label>
-      <textarea id="txt" spellcheck="false">Daily Planner Issued: Friday, November 06, 2026 at 06:00PM -03
+  <div class="inbar">
+    <div class="fld up"><label for="file" data-i18n="upload"></label>
+      <input type="file" id="file" accept=".pdf,.eml,application/pdf,message/rfc822"></div>
+    <div class="fld"><label for="cond" data-i18n="cond"></label>
+      <select id="cond"><option value="connected" data-i18n="condA"></option><option value="disconnected" data-i18n="condB"></option></select></div>
+    <div class="fld"><label data-i18n="heading"></label>
+      <div class="radio"><label><input type="radio" name="hmode" value="auto" checked> <span data-i18n="hAuto"></span></label>
+      <label><input type="radio" name="hmode" value="fixed"> <span data-i18n="hFixed"></span></label>
+      <input type="number" id="hdg" min="0" max="359" step="1" value="20" aria-label="Planned heading" title="°"></div></div>
+    <div class="fld btns"><button id="run" data-i18n="calc"></button><button class="secondary" id="loadSample" data-i18n="reload"></button></div>
+  </div>
+  <div class="status" id="fileStatus"></div>
+  <div class="status" id="runStatus"></div>
+  <textarea id="txt" spellcheck="false">Daily Planner Issued: Friday, November 06, 2026 at 06:00PM -03
 Transocean PBS - Petrobras 10000 Position: 21.29 S 40.03 W Times: -03 (-03:00 UTC Offset)
 TIME 10-Meter WIND (kt) 50-Meter WIND WIND PRIMARY SWELL SECONDARY SIG MAX VISIB. PRECIP TSTM
 (Local) DIR / SPD / GUST (kt) WAVE DIR / m / SEC SWELL WAVE WAVE (km) % PROB
@@ -215,8 +223,6 @@ Valid Thursday, November 12, 2026 Temperature (C): 24 / 24
 0600 ESE 11 14 11 13 0.7 E 1.2 7 S 1.1 8 1.7 3.2 27.5 30% 0%
 1200 E 11 14 9 12 0.7 E 1.2 7 S 1.1 8 1.7 3.1 26.0 35% 0%
 1800 E 12 16 11 14 1.0 E 1.0 7 SSE 1.1 9 1.8 3.3 23.5 70% 10%</textarea>
-    </div>
-  </div>
 </section>
 
 <section class="panel" id="summary" hidden>
@@ -257,9 +263,10 @@ Valid Thursday, November 12, 2026 Temperature (C): 24 / 24
               <circle r="7" id="hlDot" fill="#78D64B" stroke="#fff" stroke-width="2"/>
               <path d="M5 -6 L20 -22" stroke="#fff" stroke-width="1.2" stroke-opacity=".8"/>
               <g id="hlCall" transform="translate(20 -52)" font-family="Quantico,Arial,sans-serif">
-                <rect x="0" y="0" width="118" height="32" rx="3" id="hlBox" style="fill:#1E2A30;fill-opacity:.88;stroke:#78D64B;stroke-width:1.5"/>
+                <rect x="0" y="0" width="118" height="44" rx="3" id="hlBox" style="fill:#1E2A30;fill-opacity:.88;stroke:#78D64B;stroke-width:1.5"/>
                 <text x="8" y="12" font-size="8" letter-spacing=".06em" id="hlT1" style="fill:#9AD3E6">HMS · AW139 · DAY</text>
                 <text x="8" y="26" font-size="11.5" font-weight="700" id="hlT2" style="fill:#fff">LIKELY GREEN 82 %</text>
+                <text x="8" y="38.5" font-size="8.5" font-weight="700" letter-spacing=".05em" id="hlT3" style="fill:#9AD3E6">RAIN 15 %</text>
               </g>
             </g>
           </g>
@@ -550,10 +557,10 @@ const PBS = (function () {
         const t = new Date(day.getTime()); t.setHours(+m[1].slice(0, 2), +m[1].slice(2));
         out.rows.push({ valid: t, wind10_dir: m[2], wind10_dir_deg: dir2deg(m[2]), wind10_kt: +m[3], gust10_kt: +m[4], wind50_kt: +m[5], gust50_kt: +m[6],
           windsea_hs: +m[7], swell1_dir: m[8], swell1_dir_deg: dir2deg(m[8]), swell1_hs: +m[9], swell1_tp: +m[10],
-          swell2_dir: m[11], swell2_dir_deg: dir2deg(m[11]), swell2_hs: +m[12], swell2_tp: +m[13], hs_total: +m[14], hmax: +m[15] });
+          swell2_dir: m[11], swell2_dir_deg: dir2deg(m[11]), swell2_hs: +m[12], swell2_tp: +m[13], hs_total: +m[14], hmax: +m[15], vis_km: +m[16], precip_pct: +m[17], tstm_pct: +m[18] });
       }
     }
-    if (!out.rows.length) out.warnings.push('No forecast rows recognised. Paste the text of the "Daily Planner" table (TIME / WIND / SWELL columns) or upload the DTN PDF / .eml.');
+    if (!out.rows.length) out.warnings.push('No forecast rows recognised. Upload the DTN Marine Daily Planner PDF or .eml.');
     return out;
   }
   return { CONDITIONS, SHIP, CAL, makeShip, naturalPeriods, rao, respond, respondRaw, partitionsFromRow, parseForecast, dir2deg, COMPASS, windseaTp, dnvGamma, isNightAt };
@@ -579,8 +586,8 @@ const PBS = (function () {
   en:{
     subtitle:'Petrobras 10000 · heave, pitch, roll and helideck status from the DTN Marine Daily Planner',
     valLink:'Curious if this forecast is accurate? Gabriel also was, but watch this ↗', heroSub:(b,p)=>(b?b+' Basin · ':'')+p+' · dynamic positioning', heroTag:'Motion & helideck forecast', version:'Workover configuration · model v1.3.1 · validated 18 Oct 2026',
-    s1:'1 · Forecast input', upload:'Upload the DTN forecast (PDF or the .eml e-mail)',
-    fileHint:'Or paste the Daily Planner text. A sample forecast (6 Nov 2026, 18:00) is loaded so you can see how it works.',
+    s1:'1 · Forecast input', upload:'DTN forecast (PDF or .eml e-mail)',
+    fileHint:'A sample forecast (6 Nov 2026, 18:00) is loaded so you can see how it works.',
     cond:'Rig condition', condA:'Workover · TRT connected', condB:'Workover · assembly disconnected',
     heading:'Heading', hAuto:'3 scenarios (auto, incl. best heading)', hFixed:'Planned heading', hPlanned:'Planned heading (° true)',
     calc:'Calculate motions', reload:'Reload sample', txtLabel:'Daily Planner text',
@@ -602,11 +609,11 @@ const PBS = (function () {
     polarNote:(t)=>`At ${t}. The envelope depends only on the forecast, not on the heading you choose; the dots mark the three scenario headings. Significant peak-to-peak, metres; headings in ° true. Arrows show where wind (W) and swells (S1, S2) come from. Use the forecast-step slider under the animation to change the time.`,
     thTime:'Time', thHs:'Hs', thWind:'Wind', thSwell:'Dom. swell', thRel:'Rel.', thHeaveSig:'Heave sig', thHeaveMax:'Heave max', thRtSig:'Drill fl. sig', thRtMax:'Drill fl. max',
     thPitchSig:'Pitch sig', thPitchMax:'Pitch max', thRollSig:'Roll sig', thRollMax:'Roll max', thTz:'Tz', thHeli:'Helideck green', thHeliP:'Pitch / roll 20-min max', thHeliHr:'VArf max', thAW:'AW139', thS92:'S-92',
-    grpMotion:'Vessel motions', grpHeli:'Helideck (HMS)', thLikely:'most likely', green:'GREEN', red:'RED', acLbl:'Helideck light for:', likelyGreen:'LIKELY GREEN', likelyRed:'LIKELY RED', dayLbl:'DAY', nightLbl:'NIGHT',
-    heliLightNote:'The light on the helideck shows the most likely HMS status at this step and heading for the chosen helicopter (NORMAM-27 Class 3, maxima of the last 20 min, day limits as set on the rig\'s HMS). Preliminary: adjusted with 30 days of HMS logs; heave-rate calibration in progress.',
+    grpMotion:'Vessel motions', grpHeli:'Helideck (HMS)', thLikely:'most likely', green:'GREEN', red:'RED', acLbl:'Helideck light for:', likelyGreen:'LIKELY GREEN', likelyRed:'LIKELY RED', rainLbl:'RAIN', tstmLbl:'T-STORM', rainTip:'DTN precipitation probability (6-h step); grey < 40 %, blue ≥ 40 %, dark blue ≥ 80 %; T-storm shown from 30 %', dayLbl:'DAY', nightLbl:'NIGHT',
+    heliLightNote:'The light on the helideck shows the most likely HMS status at this step and heading for the chosen helicopter (NORMAM-27 Class 3, maxima of the last 20 min, day limits as set on the rig\'s HMS). Preliminary: adjusted with 30 days of HMS logs; heave-rate calibration in progress. Under the status: DTN rain probability for that step (blue from 40 %, dark blue from 80 %) and thunderstorm probability when 30 % or more.',
     tblNote:'Sig = significant value (heave: peak-to-peak 4σ; angles: single amplitude 2σ). Max = most probable largest value in a 3-hour window. Drill floor = vertical motion at the main well centre (7 m forward of the centre of gravity). Rel. = direction the dominant swell comes from, relative to the bow (180° = head seas, 90° = beam). Helideck columns: most probable 20-minute maxima at the helideck and the probability that all HMS limits are met in a 20-minute window (includes model uncertainty).',
     s4:'How to use it & what it can\'t do', instrTitle:'Instructions',
-    instr:['Open the DTN "Marine Daily Planner" e-mail and upload either the PDF attachment or the e-mail itself saved as .eml. You can also copy the planner table and paste it in the text box.',
+    instr:['Open the DTN "Marine Daily Planner" e-mail and upload either the PDF attachment or the e-mail itself saved as .eml.',
       'Choose the rig condition. The two workover conditions are almost identical (Δ ≈ 86 kt, GM ≈ 5.8 m); the choice matters little today and is here for future riser/BOP conditions.',
       'Leave "3 scenarios" selected to get the best heading, bow to the dominant swell and bow to the wind, or enter the heading the DPO plans to hold.',
       'Calculate. The cards rank the headings; click one to see the 6-hourly table and charts. Colours: green within reference, amber above 75 % of it, red above it. The helideck (HMS) prediction will appear here once it is calibrated.',
@@ -632,16 +639,16 @@ const PBS = (function () {
     valLinkLong:'Curious if this forecast is accurate? Gabriel also was, but watch this ↗',
     madeBy:'Made by Toolpusher Gabriel Cunha', footNote:'Inputs are processed in your browser; nothing is uploaded. For questions or new rig conditions contact the author.',
     stSample:'Sample forecast (6 Nov 2026 18:00) reloaded.', stCalc:'Calculating 72 headings × forecast steps …', stFail:'Calculation failed:', stReading:n=>`Reading ${n} …`, stRead:(k,n)=>`Read ${k} forecast steps from ${n}.`, stNoTable:'File read, but no forecast table recognised.',
-    stNoPdf:'No PDF attachment found inside the e-mail.', stNoReader:'PDF reader did not load; paste the planner text instead.', stErr:m=>'Could not read the file: '+m,
+    stNoPdf:'No PDF attachment found inside the e-mail.', stNoReader:'PDF reader did not load; reload the page and try again.', stErr:m=>'Could not read the file: '+m,
     stSteps:(n,m)=>`${n} forecast steps${m>0?' ('+m+' line(s) not recognised — check the text)':''}`, stIssued:'issued',
-    noRows:'No forecast rows recognised. Paste the text of the "Daily Planner" table (TIME / WIND / SWELL columns) or upload the DTN PDF / .eml.',
+    noRows:'No forecast rows recognised. Upload the DTN Marine Daily Planner PDF or .eml.',
     chHeave:'Heave p-p (m)', chPitch:'Pitch (°)', chRoll:'Roll (°)', locale:'en-GB',
   },
   pt:{
     subtitle:'Petrobras 10000 · heave, pitch, roll e status do heliponto a partir do DTN Marine Daily Planner',
     valLink:'Curioso se essa previsão é precisa? O Gabriel também era, mas veja isto ↗', heroSub:(b,p)=>(b?'Bacia '+(b==='Espírito Santo'?'do ':'de ')+b+' · ':'')+p.replace(/\./g,',')+' · posicionamento dinâmico', heroTag:'Previsão de movimentos e heliponto', version:'Configuração de workover · modelo v1.3.1 · validado 18 out 2026',
-    s1:'1 · Entrada da previsão', upload:'Carregue a previsão DTN (PDF ou o e-mail .eml)',
-    fileHint:'Ou cole o texto do Daily Planner. Uma previsão de exemplo (6 nov 2026, 18:00) já está carregada para mostrar como funciona.',
+    s1:'1 · Entrada da previsão', upload:'Previsão DTN (PDF ou e-mail .eml)',
+    fileHint:'Uma previsão de exemplo (6 nov 2026, 18:00) já está carregada para mostrar como funciona.',
     cond:'Condição da sonda', condA:'Workover · TRT conectada', condB:'Workover · conjunto desconectado',
     heading:'Aproamento', hAuto:'3 cenários (automático, incl. melhor aproamento)', hFixed:'Aproamento planejado', hPlanned:'Aproamento planejado (° verdadeiro)',
     calc:'Calcular movimentos', reload:'Recarregar exemplo', txtLabel:'Texto do Daily Planner',
@@ -663,11 +670,11 @@ const PBS = (function () {
     polarNote:(t)=>`Em ${t}. O envelope depende só da previsão, não do aproamento escolhido; os pontos marcam os três aproamentos dos cenários. Pico a pico significativo, metros; aproamentos em ° verdadeiros. Setas mostram de onde vêm o vento (W) e os swells (S1, S2). Use o controle de passo da previsão sob a animação para mudar o horário.`,
     thTime:'Hora', thHs:'Hs', thWind:'Vento', thSwell:'Swell dom.', thRel:'Rel.', thHeaveSig:'Heave sig', thHeaveMax:'Heave máx', thRtSig:'Drill fl. sig', thRtMax:'Drill fl. máx',
     thPitchSig:'Pitch sig', thPitchMax:'Pitch máx', thRollSig:'Roll sig', thRollMax:'Roll máx', thTz:'Tz', thHeli:'Heliponto verde', thHeliP:'Pitch / roll máx 20 min', thHeliHr:'VArf máx', thAW:'AW139', thS92:'S-92',
-    grpMotion:'Movimentos da embarcação', grpHeli:'Heliponto (HMS)', thLikely:'mais provável', green:'VERDE', red:'VERMELHO', acLbl:'Luz do heliponto para:', likelyGreen:'PROVÁVEL VERDE', likelyRed:'PROVÁVEL VERMELHO', dayLbl:'DIA', nightLbl:'NOITE',
-    heliLightNote:'A luz no heliponto mostra o status mais provável do HMS neste passo e aproamento para o helicóptero escolhido (NORMAM-27 Classe 3, máximos dos últimos 20 min, limites de dia como ajustado no HMS da sonda). Preliminar: ajustado com 30 dias de registros do HMS; calibração da velocidade de arfagem em andamento.',
+    grpMotion:'Movimentos da embarcação', grpHeli:'Heliponto (HMS)', thLikely:'mais provável', green:'VERDE', red:'VERMELHO', acLbl:'Luz do heliponto para:', likelyGreen:'PROVÁVEL VERDE', likelyRed:'PROVÁVEL VERMELHO', rainLbl:'CHUVA', tstmLbl:'TROVOADA', rainTip:'Probabilidade de precipitação da DTN (passo de 6 h); cinza < 40 %, azul ≥ 40 %, azul-escuro ≥ 80 %; trovoada mostrada a partir de 30 %', dayLbl:'DIA', nightLbl:'NOITE',
+    heliLightNote:'A luz no heliponto mostra o status mais provável do HMS neste passo e aproamento para o helicóptero escolhido (NORMAM-27 Classe 3, máximos dos últimos 20 min, limites de dia como ajustado no HMS da sonda). Preliminar: ajustado com 30 dias de registros do HMS; calibração da velocidade de arfagem em andamento. Abaixo do status: probabilidade de chuva da DTN naquele passo (azul a partir de 40 %, azul-escuro a partir de 80 %) e probabilidade de trovoada quando for 30 % ou mais.',
     tblNote:'Sig = valor significativo (heave: pico a pico 4σ; ângulos: amplitude simples 2σ). Máx = maior valor mais provável numa janela de 3 h. Drill floor = movimento vertical no centro do poço principal (7 m a vante do centro de gravidade). Rel. = direção de onde vem o swell dominante, relativa à proa (180° = mar de proa, 90° = través). Colunas do heliponto: máximos mais prováveis em 20 min no heliponto e a probabilidade de todos os limites do HMS serem atendidos numa janela de 20 min (inclui a incerteza do modelo).',
     s4:'Como usar e o que ele não faz', instrTitle:'Instruções',
-    instr:['Abra o e-mail "Marine Daily Planner" da DTN e carregue o PDF anexo ou o próprio e-mail salvo como .eml. Também é possível copiar a tabela do planner e colar na caixa de texto.',
+    instr:['Abra o e-mail "Marine Daily Planner" da DTN e carregue o PDF anexo ou o próprio e-mail salvo como .eml.',
       'Escolha a condição da sonda. As duas condições de workover são quase idênticas (Δ ≈ 86 kt, GM ≈ 5,8 m); hoje a escolha pouco importa e existe para as futuras condições com riser/BOP.',
       'Deixe "3 cenários" selecionado para obter o melhor aproamento, proa para o swell dominante e proa para o vento, ou informe o aproamento que o DPO pretende manter.',
       'Calcule. Os cartões ordenam os aproamentos; clique num deles para ver a tabela de 6 em 6 h e os gráficos. Cores: verde dentro da referência, âmbar acima de 75 % dela, vermelho acima. A previsão do heliponto (HMS) aparecerá aqui depois de calibrada.',
@@ -693,7 +700,7 @@ const PBS = (function () {
     valLinkLong:'Curioso se essa previsão é precisa? O Gabriel também era, mas veja isto ↗',
     madeBy:'Feito por Toolpusher Gabriel Cunha', footNote:'As entradas são processadas no seu navegador; nada é enviado. Dúvidas ou novas condições da sonda: fale com o autor.',
     stSample:'Previsão de exemplo (6 nov 2026 18:00) recarregada.', stCalc:'Calculando 72 aproamentos × passos da previsão …', stFail:'Falha no cálculo:', stReading:n=>`Lendo ${n} …`, stRead:(k,n)=>`Lidos ${k} passos de previsão de ${n}.`, stNoTable:'Arquivo lido, mas nenhuma tabela de previsão reconhecida.',
-    stNoPdf:'Nenhum PDF anexo encontrado dentro do e-mail.', stNoReader:'O leitor de PDF não carregou; cole o texto do planner.', stErr:m=>'Não foi possível ler o arquivo: '+m,
+    stNoPdf:'Nenhum PDF anexo encontrado dentro do e-mail.', stNoReader:'O leitor de PDF não carregou; recarregue a página e tente de novo.', stErr:m=>'Não foi possível ler o arquivo: '+m,
     stSteps:(n,m)=>`${n} passos de previsão${m>0?' ('+m+' linha(s) não reconhecida(s) — confira o texto)':''}`, stIssued:'emitida',
     noRows:'Nenhuma linha de previsão reconhecida. Cole o texto da tabela do "Daily Planner" (colunas TIME / WIND / SWELL) ou carregue o PDF / .eml da DTN.',
     chHeave:'Heave p-p (m)', chPitch:'Pitch (°)', chRoll:'Roll (°)', locale:'pt-BR',
@@ -728,6 +735,8 @@ const PBS = (function () {
   function fmtDT(d){ return fmtDate(d)+' '+fmtTime(d); }
   function cls(v,ref){ return v>ref?'bad':v>0.75*ref?'warn':'ok'; }
   function pcls(p){ return p>=0.8?'ok':p>=0.5?'warn':'bad'; }
+  function rainLvl(r){ return r.precip_pct>=80?2:r.precip_pct>=40?1:0; }
+  function rainTxt(r){ return `${t('rainLbl')} ${r.precip_pct} %`+(r.tstm_pct>=30?` · ${t('tstmLbl')} ${r.tstm_pct} %`:''); }
   function pcol(p){ return p>=0.8?'var(--cell-ok)':p>=0.5?'var(--cell-warn)':'var(--cell-bad)'; }
   function deg(v){ return Math.round(((v%360)+360)%360); }
   function pad3(h){ return String(h).padStart(3,'0'); }
@@ -836,7 +845,7 @@ const PBS = (function () {
       html+=`<tr><td class="l">${fmtTime(r.valid)}${st.night&&HELI_LIGHT&&HELI_NIGHT_LIMITS?' <span class="moon" title="'+t('nightLbl')+'">☾</span>':''}</td><td>${r.hs_total.toFixed(1)} m</td><td>${r.wind10_dir} ${r.wind10_kt} kt</td><td>${ds.n} ${ds.hs.toFixed(1)} m / ${ds.tp} s</td><td>${Math.round(rel)}°</td>`+
         `<td class="v ${cls(res.heave.sig,REF.heave)}">${res.heave.sig.toFixed(2)} m</td><td>${res.heave.max.toFixed(2)} m</td><td class="v ${cls(res.rt.sig,REF.heave)}">${res.rt.sig.toFixed(2)} m</td><td>${res.rt.max.toFixed(2)} m</td>`+
         `<td class="v ${cls(res.pitch.sig,REF.pitch)}">${res.pitch.sig.toFixed(2)}°</td><td>${res.pitch.max.toFixed(2)}°</td><td class="v ${cls(res.roll.sig,REF.roll)}">${res.roll.sig.toFixed(2)}°</td><td>${res.roll.max.toFixed(2)}°</td><td>${isFinite(res.heave.Tz)?res.heave.Tz.toFixed(1)+' s':'—'}</td>`+
-        (HELI_LIGHT?(()=>{ const pg=H.aircraft[AC].Pgreen; const g=pg>=0.5; return `<td class="${g?'pg':'pr'}">${g?t('green'):t('red')} ${((g?pg:1-pg)*100).toFixed(0)} %</td>`; })():'')+`</tr>`; });
+        (HELI_LIGHT?(()=>{ const pg=H.aircraft[AC].Pgreen; const g=pg>=0.5; return `<td class="${g?'pg':'pr'}">${g?t('green'):t('red')} ${((g?pg:1-pg)*100).toFixed(0)} %<span class="rainc r${rainLvl(r)}" title="${t('rainTip')}">${t('rainLbl')} ${r.precip_pct} %${r.tstm_pct>=30?` · <span class="ts">${t('tstmLbl')} ${r.tstm_pct} %</span>`:''}</span></td>`; })():'')+`</tr>`; });
     $('tbl').innerHTML=html;
     $('chartTS').innerHTML=tsChart(scen,rows);
     $('legendTS').innerHTML=scen.map((sc,i)=>`<span><i style="background:${SERIES[i]}"></i>${t(sc.nameKey)} ${pad3(sc.heading)}°</span>`).join('');
@@ -868,8 +877,9 @@ const PBS = (function () {
       $('hlDot').setAttribute('fill',col); $('hlGlow').setAttribute('fill',col); $('hlBox').style.stroke=col;
       $('hlT1').textContent=`HMS · ${PBS.CAL.hms.aircraft[AC].label.split(' ')[0]} · ${HELI_NIGHT_LIMITS?(st.night?t('nightLbl'):t('dayLbl')):'NORMAM-27'}`;
       $('hlT2').textContent=`${g?t('likelyGreen'):t('likelyRed')} ${((g?pg:1-pg)*100).toFixed(0)} %`; $('hlT2').style.fill=g?'#B6EE9A':'#FFB3AC';
-      const w=Math.ceil(Math.max($('hlT1').textContent.length*5.0,$('hlT2').textContent.length*7.5))+16; $('hlBox').setAttribute('width',w);
-      $('hlCall').setAttribute('transform',`translate(${Math.min(20,190-w)} -52)`); }
+      { const rl=rainLvl(st.row); $('hlT3').textContent=rainTxt(st.row); $('hlT3').style.fill=st.row.tstm_pct>=30?'#FFB3AC':(rl===2?'#5FB4FF':rl===1?'#9AD3E6':'#8FA7B0'); }
+      const w=Math.ceil(Math.max($('hlT1').textContent.length*5.0,$('hlT2').textContent.length*7.5,$('hlT3').textContent.length*5.6))+16; $('hlBox').setAttribute('width',w);
+      $('hlCall').setAttribute('transform',`translate(${Math.min(20,190-w)} -64)`); }
     $('heliLight').style.display=HELI_LIGHT?'':'none'; $('acRow').style.display=HELI_LIGHT?'':'none';
     $('animLbl').textContent=`${fmtDT(st.row.valid)} · Hs ${st.row.hs_total.toFixed(1)} m · HDG ${pad3(s.heading)}°`;
     if(reduced||!ANIM.playing) drawAnim(1.5);
