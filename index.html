@@ -53,6 +53,8 @@ header a{color:#fff;font-size:13px}
 .heli .hdr .lim{font-size:12px;color:var(--muted);margin-top:2px}
 .strip .r .n small{display:block;font-weight:400;color:var(--muted);font-size:11px}
 .moon{font-size:11px;color:var(--muted)}
+.stepbest{margin-top:8px;padding:7px 10px;border-left:4px solid var(--s2);background:color-mix(in srgb,var(--s2) 10%,transparent);border-radius:3px;font-size:13px}
+.stepbest b{font-size:15px}
 .acsel{display:inline-flex;border:2px solid var(--h2);border-radius:4px;overflow:hidden}.acsel button{background:transparent;color:var(--h2);border:0;padding:6px 12px;font-weight:700;cursor:pointer}.acsel button.on{background:var(--h2);color:#fff}
 td.pl{color:var(--muted)} td.pg{font-weight:700;background:var(--ok-bg);color:var(--ok-fg)} td.pr{font-weight:700;background:var(--bad-bg);color:var(--bad-fg)}
 .animwrap{border:1px solid var(--line);max-width:100%}
@@ -291,6 +293,8 @@ Valid Thursday, November 12, 2026 Temperature (C): 24 / 24
         </g>
       </svg></div>
       <div class="row" style="margin-top:8px;align-items:center"><div style="flex:1 1 160px"><label for="animStep" data-i18n="animStepLbl" style="margin-bottom:2px"></label><input type="range" id="animStep" min="0" max="0" value="0" step="1" style="width:100%"></div><div style="flex:0 0 auto"><button class="secondary" id="animPlay" style="padding:8px 14px" data-i18n="animPause"></button></div></div>
+      <div class="stepbest" id="stepBest"></div>
+      <div class="row" style="margin-top:6px;align-items:center;gap:10px"><span class="small" data-i18n="animHdgLbl"></span><div class="acsel" id="hdgSel"><button data-m="step" class="on" type="button" data-i18n="animHdgStep"></button><button data-m="card" type="button" id="hdgCardBtn"></button></div></div>
       <div class="row" id="acRow" style="margin-top:8px;align-items:center;gap:10px"><span class="small" data-i18n="acLbl"></span><div class="acsel" id="acSel"><button data-ac="AW139" class="on" type="button">AW139</button><button data-ac="S92" type="button">S-92</button></div></div>
       <div class="small" id="animNote"></div>
     </div>
@@ -598,15 +602,15 @@ const PBS = (function () {
     legOk:'≥ 80 % green', legWarn:'50–80 %', legBad:'< 50 % (likely red)', legNight:'· dimmed cells = night',
     heliNote:'Motion only: wind, visibility, cloud base and deck availability are not included; the aircraft commander decides. Day/night from sunrise and sunset at the rig position. Heave rate (VArf, NORMAM-27 definition) at the helideck comes mostly from pitch × 113 m (helideck at the bow); it has not yet been checked against HMS logs, so treat it as indicative until HMS data is used to calibrate it.',
     scenTitle:'Heading scenarios',
-    scenNote:'Each card shows the worst 6-hour step of the forecast for that heading. Values are significant: heave peak-to-peak (4σ), pitch and roll single amplitude (2σ). At zero speed the model gives the same motions for a heading and its reciprocal (swell on the bow or on the stern); the best heading is chosen on the bow-to-weather side, as DP practice prefers. Click a card to see its full table and charts. The ranking index compares each motion with reference values (heave 2.0 m p-p, pitch 1.0°, roll 1.5°) used only to rank headings; they are not operating limits.',
-    best:'Best heading', bestNote:'lowest worst-case index, bow to weather', planned:'Planned heading', plannedNote:'as entered',
+    scenNote:'Each card assumes the rig holds that heading for the whole forecast period (the next days) and shows its worst 6-hour step. The best heading is the single heading that keeps that worst step lowest over the whole period; for the best heading at one specific time, move the forecast-step slider in section 3. Values are significant: heave peak-to-peak (4σ), pitch and roll single amplitude (2σ). At zero speed the model gives the same motions for a heading and its reciprocal (swell on the bow or on the stern); the best heading is chosen on the bow-to-weather side, as DP practice prefers. Click a card to see its full table and charts. The ranking index compares each motion with reference values (heave 2.0 m p-p, pitch 1.0°, roll 1.5°) used only to rank headings; they are not operating limits.',
+    best:'Best heading', bestNote:'whole forecast period', stepBestLbl:'Best heading for this step', stepBestTxt:(h,rt,ix,d)=>`<b>${h}°</b> at ${d} · drill floor ${rt} m p-p · index ${ix}`, stepBestNote:'only for this 6-hour step; section 2 gives the single heading for the whole period', animHdgLbl:'Animation heading:', animHdgStep:'Best for this step', animHdgCard:(h)=>`Selected card ${h}°`, polarStep:'best for this step', planned:'Planned heading', plannedNote:'as entered',
     bowSwell:'Bow to dominant swell', bowWind:'Bow to wind', first48:'mean of first 48 h', worstStep:'Worst step', heliMin:'Helideck green (min, day)',
     heavePP:'Heave p-p', drillFloor:'Drill floor', pitch:'Pitch', roll:'Roll', index:'index',
     issued:'forecast issued', position:'position', valid:'valid period', maxHs:'max forecast Hs',
     s3:'3 ·', chartTitle:'Significant motions over the forecast', polarTitle:'Drill-floor vertical motion vs heading',
     animTitle:'Rig motion for this heading (animated)', animStepLbl:'Forecast step', animPause:'Pause', animPlayLbl:'Play',
     animNote:(d,h,r)=>`${d} · heading ${h}° · heave ${r.heave.sig.toFixed(2)} m p-p, pitch ${r.pitch.sig.toFixed(2)}°, roll ${r.roll.sig.toFixed(2)}° (significant). Motion is exaggerated to be visible (heave ×10 in pixels per metre, pitch and roll ×8); the numbers on the picture are the real instantaneous values; time runs in real time. The yellow reticle marks the main well centre on the drill floor.`,
-    polarNote:(t)=>`At ${t}. The envelope depends only on the forecast, not on the heading you choose; the dots mark the three scenario headings. Significant peak-to-peak, metres; headings in ° true. Arrows show where wind (W) and swells (S1, S2) come from. Use the forecast-step slider under the animation to change the time.`,
+    polarNote:(t)=>`At ${t}. The envelope depends only on the forecast, not on the heading you choose; the dots mark the scenario headings; the dashed orange ring is the best heading for this step. Significant peak-to-peak, metres; headings in ° true. Arrows show where wind (W) and swells (S1, S2) come from. Use the forecast-step slider under the animation to change the time.`,
     thTime:'Time', thHs:'Hs', thWind:'Wind', thSwell:'Dom. swell', thRel:'Rel.', thHeaveSig:'Heave sig', thHeaveMax:'Heave max', thRtSig:'Drill fl. sig', thRtMax:'Drill fl. max',
     thPitchSig:'Pitch sig', thPitchMax:'Pitch max', thRollSig:'Roll sig', thRollMax:'Roll max', thTz:'Tz', thHeli:'Helideck green', thHeliP:'Pitch / roll 20-min max', thHeliHr:'VArf max', thAW:'AW139', thS92:'S-92',
     grpMotion:'Vessel motions', grpHeli:'Helideck (HMS)', thLikely:'most likely', green:'GREEN', red:'RED', acLbl:'Helideck light for:', likelyGreen:'LIKELY GREEN', likelyRed:'LIKELY RED', rainLbl:'RAIN', tstmLbl:'T-STORM', rainTip:'DTN precipitation probability (6-h step); grey < 40 %, blue ≥ 40 %, dark blue ≥ 80 %; T-storm shown from 30 %', dayLbl:'DAY', nightLbl:'NIGHT',
@@ -659,15 +663,15 @@ const PBS = (function () {
     legOk:'≥ 80 % verde', legWarn:'50–80 %', legBad:'< 50 % (provável vermelho)', legNight:'· células esmaecidas = noite',
     heliNote:'Somente movimento: vento, visibilidade, teto e disponibilidade do convés não entram; a decisão é do comandante da aeronave. Dia/noite pelo nascer e pôr do sol na posição da sonda. A velocidade de arfagem (VArf, definição da NORMAM-27) no heliponto vem principalmente do caturro × 113 m (heliponto na proa); ainda não foi conferida com registros do HMS, portanto trate como indicativa até que dados do HMS sejam usados na calibração.',
     scenTitle:'Cenários de aproamento',
-    scenNote:'Cada cartão mostra o pior passo de 6 h da previsão para aquele aproamento. Valores significativos: heave pico a pico (4σ), pitch e roll amplitude simples (2σ). Com velocidade zero o modelo dá os mesmos movimentos para um aproamento e o seu recíproco (swell pela proa ou pela popa); o melhor aproamento é escolhido com a proa para o tempo, como a prática de DP prefere. Clique num cartão para ver a tabela completa e os gráficos. O índice compara cada movimento com valores de referência (heave 2,0 m p-p, pitch 1,0°, roll 1,5°) usados só para ordenar aproamentos; não são limites operacionais.',
-    best:'Melhor aproamento', bestNote:'menor índice de pior caso, proa para o tempo', planned:'Aproamento planejado', plannedNote:'como informado',
+    scenNote:'Cada cartão considera que a sonda mantém aquele aproamento durante todo o período da previsão (os próximos dias) e mostra o pior passo de 6 h. O melhor aproamento é o aproamento único que mantém esse pior passo mais baixo em todo o período; para o melhor aproamento num horário específico, mova o controle de passo da previsão na seção 3. Valores significativos: heave pico a pico (4σ), pitch e roll amplitude simples (2σ). Com velocidade zero o modelo dá os mesmos movimentos para um aproamento e o seu recíproco (swell pela proa ou pela popa); o melhor aproamento é escolhido com a proa para o tempo, como a prática de DP prefere. Clique num cartão para ver a tabela completa e os gráficos. O índice compara cada movimento com valores de referência (heave 2,0 m p-p, pitch 1,0°, roll 1,5°) usados só para ordenar aproamentos; não são limites operacionais.',
+    best:'Melhor aproamento', bestNote:'todo o período da previsão', stepBestLbl:'Melhor aproamento neste passo', stepBestTxt:(h,rt,ix,d)=>`<b>${h}°</b> em ${d} · drill floor ${rt} m p-p · índice ${ix}`, stepBestNote:'só para este passo de 6 h; a seção 2 dá o aproamento único para todo o período', animHdgLbl:'Aproamento da animação:', animHdgStep:'Melhor neste passo', animHdgCard:(h)=>`Cartão selecionado ${h}°`, polarStep:'melhor neste passo', planned:'Aproamento planejado', plannedNote:'como informado',
     bowSwell:'Proa para o swell dominante', bowWind:'Proa para o vento', first48:'média das primeiras 48 h', worstStep:'Pior passo', heliMin:'Heliponto verde (mín., dia)',
     heavePP:'Heave p-p', drillFloor:'Drill floor', pitch:'Pitch', roll:'Roll', index:'índice',
     issued:'previsão emitida', position:'posição', valid:'período válido', maxHs:'Hs máx. prevista',
     s3:'3 ·', chartTitle:'Movimentos significativos ao longo da previsão', polarTitle:'Movimento vertical do drill floor vs aproamento',
     animTitle:'Movimento da sonda neste aproamento (animação)', animStepLbl:'Passo da previsão', animPause:'Pausar', animPlayLbl:'Reproduzir',
     animNote:(d,h,r)=>`${d} · aproamento ${h}° · heave ${r.heave.sig.toFixed(2)} m p-p, pitch ${r.pitch.sig.toFixed(2)}°, roll ${r.roll.sig.toFixed(2)}° (significativos). O movimento é exagerado para ficar visível (heave ×10 em pixels por metro, pitch e roll ×8); os números na imagem são os valores instantâneos reais; o tempo corre em tempo real. A mira amarela marca o centro do poço principal no drill floor.`,
-    polarNote:(t)=>`Em ${t}. O envelope depende só da previsão, não do aproamento escolhido; os pontos marcam os três aproamentos dos cenários. Pico a pico significativo, metros; aproamentos em ° verdadeiros. Setas mostram de onde vêm o vento (W) e os swells (S1, S2). Use o controle de passo da previsão sob a animação para mudar o horário.`,
+    polarNote:(t)=>`Em ${t}. O envelope depende só da previsão, não do aproamento escolhido; os pontos marcam os aproamentos dos cenários; o anel laranja tracejado é o melhor aproamento neste passo. Pico a pico significativo, metros; aproamentos em ° verdadeiros. Setas mostram de onde vêm o vento (W) e os swells (S1, S2). Use o controle de passo da previsão sob a animação para mudar o horário.`,
     thTime:'Hora', thHs:'Hs', thWind:'Vento', thSwell:'Swell dom.', thRel:'Rel.', thHeaveSig:'Heave sig', thHeaveMax:'Heave máx', thRtSig:'Drill fl. sig', thRtMax:'Drill fl. máx',
     thPitchSig:'Pitch sig', thPitchMax:'Pitch máx', thRollSig:'Roll sig', thRollMax:'Roll máx', thTz:'Tz', thHeli:'Heliponto verde', thHeliP:'Pitch / roll máx 20 min', thHeliHr:'VArf máx', thAW:'AW139', thS92:'S-92',
     grpMotion:'Movimentos da embarcação', grpHeli:'Heliponto (HMS)', thLikely:'mais provável', green:'VERDE', red:'VERMELHO', acLbl:'Luz do heliponto para:', likelyGreen:'PROVÁVEL VERDE', likelyRed:'PROVÁVEL VERMELHO', rainLbl:'CHUVA', tstmLbl:'TROVOADA', rainTip:'Probabilidade de precipitação da DTN (passo de 6 h); cinza < 40 %, azul ≥ 40 %, azul-escuro ≥ 80 %; trovoada mostrada a partir de 30 %', dayLbl:'DIA', nightLbl:'NOITE',
@@ -853,10 +857,21 @@ const PBS = (function () {
     $('animStep').max=rows.length-1; $('animStep').value=RESULTS.step; renderStep(); startAnim();
     $('detail').hidden=false;
   }
+  function stepBest(wi){
+    const {sweep,rows}=RESULTS; const r=rows[wi]; const dw=dominantWave(r);
+    const c=sweep.map(sc=>({sc,ix:worstIndex(sc.steps[wi].res),wx:180-Math.abs(((dw.d-sc.heading+180)%360+360)%360-180)}));
+    const mn=Math.min(...c.map(x=>x.ix)); const near=c.filter(x=>x.ix<=mn+0.02);
+    let b=near[0]; for(const x of near){ if(x.wx>b.wx+1e-9||(Math.abs(x.wx-b.wx)<1e-9&&x.ix<b.ix)) b=x; }
+    return {heading:b.sc.heading, ix:b.ix, st:b.sc.steps[wi]};
+  }
+  let ANIM_HDG='step';
   function renderStep(){
     const {scen,sweep,rows}=RESULTS; const wi=RESULTS.step; const r=rows[wi];
     const vals=sweep.map(sc=>({h:sc.heading,v:sc.steps[wi].res.rt.sig}));
-    $('chartPolar').innerHTML=polarChart(vals,scen,r);
+    const sb=stepBest(wi); RESULTS.sb=sb;
+    $('stepBest').innerHTML=`${t('stepBestLbl')}: ${t('stepBestTxt')(pad3(sb.heading),sb.st.res.rt.sig.toFixed(2),sb.ix.toFixed(2),fmtDT(r.valid))}<div class="small">${t('stepBestNote')}</div>`;
+    $('hdgCardBtn').textContent=t('animHdgCard')(pad3(scen[SEL].heading));
+    $('chartPolar').innerHTML=polarChart(vals,scen,r,sb);
     $('polarNote').textContent=t('polarNote')(fmtDT(r.valid));
     setAnim(wi);
   }
@@ -868,7 +883,7 @@ const PBS = (function () {
     return t=>comps.reduce((a,[k,f],i)=>a+amp*k*Math.sin(w*f*t+seed*(i+1)*2.1),0);
   }
   function setAnim(step){
-    const s=RESULTS.scen[SEL]; const st=s.steps[Math.max(0,Math.min(step,s.steps.length-1))]; const r=st.res; ANIM.step=step;
+    const useStep=ANIM_HDG==='step'&&RESULTS.sb; const s=useStep?{heading:RESULTS.sb.heading}:RESULTS.scen[SEL]; const st=useStep?RESULTS.sb.st:RESULTS.scen[SEL].steps[Math.max(0,Math.min(step,RESULTS.scen[SEL].steps.length-1))]; const r=st.res; ANIM.step=step;
     const Gh=10, Ga=8;  // visual gains: 1 m of heave -> 22 px, angles x8
     ANIM.sig={ heave:mkSignal(r.heave.sig/2*Gh, r.heave.Tz, 0.3), pitch:mkSignal(r.pitch.sig*Ga, r.pitch.Tz, 1.1), roll:mkSignal(r.roll.sig*Ga, r.roll.Tz, 2.3), Gh, Ga,
       wave:Math.min(28,(st.row.hs_total/2)*7), waveT:r.heave.Tz>0?r.heave.Tz:9 };
@@ -918,7 +933,7 @@ const PBS = (function () {
     let lastDay=''; rows.forEach((r,i)=>{ const d=r.valid.toLocaleDateString(t('locale'),{weekday:'short',day:'2-digit'}); if((d!==lastDay&&r.valid.getHours()===0)||i===0){ lastDay=d; g+=`<line x1="${x(i)}" x2="${x(i)}" y1="${mt}" y2="${H-mb}" stroke="var(--grid)"/><text x="${x(i)+2}" y="${H-mb+14}" font-size="10" fill="var(--muted)">${d}</text>`; } });
     return g+'</svg>';
   }
-  function polarChart(vals,scen,row){
+  function polarChart(vals,scen,row,sb){
     const S=300,c=S/2,R=112; const vmax=Math.max(REF.heave,...vals.map(v=>v.v))*1.05;
     let g=`<svg viewBox="0 0 ${S} ${S}" width="100%" style="max-width:440px;height:auto;display:block;margin:0 auto" role="img" aria-label="Drill floor vertical motion versus heading">`;
     [0.25,0.5,0.75,1].forEach(f=>{ g+=`<circle cx="${c}" cy="${c}" r="${R*f}" fill="none" stroke="var(--grid)"/><text x="${c+3}" y="${c-R*f+10}" font-size="9" fill="var(--muted)">${(vmax*f).toFixed(1)}</text>`; });
@@ -929,8 +944,10 @@ const PBS = (function () {
     const arrows=[{n:'W',d:row.wind10_dir_deg,ok:row.wind10_kt>0},{n:'S1',d:row.swell1_dir_deg,ok:row.swell1_hs>0},{n:'S2',d:row.swell2_dir_deg,ok:row.swell2_hs>0}];
     arrows.forEach(a=>{ if(a.d==null||!a.ok) return; const th=a.d*Math.PI/180; const x1=c+(R+2)*Math.sin(th),y1=c-(R+2)*Math.cos(th),x2=c+(R-18)*Math.sin(th),y2=c-(R-18)*Math.cos(th); g+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--slate)" stroke-width="2"/><text x="${c+(R+26)*Math.sin(th)}" y="${c-(R+26)*Math.cos(th)+4}" font-size="10" text-anchor="middle" fill="var(--muted)">${a.n}</text>`; });
     scen.forEach((s,i)=>{ const v=vals.find(x=>x.h===s.heading)||vals.reduce((m,x)=>Math.abs(x.h-s.heading)<Math.abs(m.h-s.heading)?x:m); const [x,y]=pt(v); g+=`<circle cx="${x}" cy="${y}" r="5" fill="${SERIES[i]}" stroke="var(--panel)" stroke-width="1.5"/>`; });
+    if(sb){ const v=vals.find(x=>x.h===sb.heading); if(v){ const [x,y]=pt(v); g+=`<circle cx="${x}" cy="${y}" r="9" fill="none" stroke="var(--s2)" stroke-width="2.5" stroke-dasharray="3 2"/><text x="${x+13}" y="${y+4}" font-size="9.5" font-weight="700" fill="var(--s2)">${pad3(sb.heading)}°</text>`; } }
     return g+'</svg>';
   }
+  $('hdgSel').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{ ANIM_HDG=b.dataset.m; $('hdgSel').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); if(RESULTS){ setAnim(RESULTS.step); } }));
   applyLang();
   run();
 })();
